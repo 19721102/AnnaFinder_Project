@@ -25,6 +25,13 @@ def read_version(base_dir: str) -> str:
     return "unknown"
 
 
+def vacuum_into_sql(backup_path: str) -> str:
+    if not backup_path:
+        raise ValueError("backup_path required")
+    escaped_path = backup_path.replace("'", "''")
+    return f"VACUUM INTO '{escaped_path}'"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="SQLite backup using VACUUM INTO")
     parser.add_argument("--db", default=os.path.join("backend", "annafinder.db"))
@@ -49,7 +56,7 @@ def main() -> int:
     try:
         con.execute("PRAGMA busy_timeout = 10000")
         # VACUUM INTO creates a consistent, compact snapshot copy.
-        con.execute(f"VACUUM INTO '{backup_path}'")
+        con.execute(vacuum_into_sql(backup_path))
     finally:
         con.close()
 

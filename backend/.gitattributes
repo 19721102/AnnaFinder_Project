@@ -1,0 +1,2 @@
+# Enforce LF for backend code/config
+* text=auto eol=lf

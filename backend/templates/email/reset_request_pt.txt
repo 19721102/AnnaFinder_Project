@@ -1,0 +1,12 @@
+Ola,
+
+Recebemos um pedido para repor a palavra-passe da sua conta AnnaFinder.
+
+Link de reposicao:
+{link}
+
+Este link expira em {expires_minutes} minutos.
+Se nao pediu isto, pode ignorar este email.
+
+Obrigado,
+{app_name}

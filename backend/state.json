@@ -1,0 +1,160 @@
+{
+  "patient": {
+    "name": "Oswaldo Tester",
+    "heart_rate": 72,
+    "spo2": 98,
+    "alert_level": "LOW",
+    "status_key": "status_active",
+    "last_event": "routine",
+    "updated_at": "2025-12-18T16:07:58.559918"
+  },
+  "objects": [
+    {
+      "id": "wallet",
+      "name": {
+        "en": "Wallet",
+        "pt": "Carteira"
+      },
+      "icon": "👛",
+      "location_key": "kitchen",
+      "battery": 100
+    },
+    {
+      "id": "keys",
+      "name": {
+        "en": "Keys",
+        "pt": "Chaves"
+      },
+      "icon": "🔑",
+      "location_key": "living_room",
+      "battery": 85
+    },
+    {
+      "id": "glasses",
+      "name": {
+        "en": "Glasses",
+        "pt": "Óculos"
+      },
+      "icon": "👓",
+      "location_key": "street",
+      "battery": 92
+    },
+    {
+      "id": "phone-sn9y",
+      "name": {
+        "en": "Phone",
+        "pt": "Celular"
+      },
+      "icon": "📱",
+      "location_key": "bathroom",
+      "battery": 100
+    }
+  ],
+  "events": [
+    {
+      "ts": "2025-12-21T23:43:35.861604",
+      "kind": "events_cleared",
+      "payload": {
+        "note": "cleared_by_user"
+      }
+    },
+    {
+      "ts": "2025-12-21T23:44:15.024164",
+      "kind": "move_object",
+      "payload": {
+        "object_id": "wallet",
+        "object_name": {
+          "en": "Wallet",
+          "pt": "Carteira"
+        },
+        "icon": "👛",
+        "from_location_key": "living_room",
+        "to_location_key": "kitchen"
+      }
+    },
+    {
+      "ts": "2025-12-21T23:44:28.789235",
+      "kind": "move_object",
+      "payload": {
+        "object_id": "keys",
+        "object_name": {
+          "en": "Keys",
+          "pt": "Chaves"
+        },
+        "icon": "🔑",
+        "from_location_key": "kitchen",
+        "to_location_key": "living_room"
+      }
+    },
+    {
+      "ts": "2025-12-21T23:45:01.628956",
+      "kind": "move_object",
+      "payload": {
+        "object_id": "glasses",
+        "object_name": {
+          "en": "Glasses",
+          "pt": "Óculos"
+        },
+        "icon": "👓",
+        "from_location_key": "bedroom",
+        "to_location_key": "bedroom"
+      }
+    },
+    {
+      "ts": "2025-12-21T23:45:29.341829",
+      "kind": "move_object",
+      "payload": {
+        "object_id": "phone-sn9y",
+        "object_name": {
+          "en": "Phone",
+          "pt": "Celular"
+        },
+        "icon": "📱",
+        "from_location_key": "living_room",
+        "to_location_key": "bathroom"
+      }
+    },
+    {
+      "ts": "2025-12-22T00:42:36.627888",
+      "kind": "move_object",
+      "payload": {
+        "object_id": "glasses",
+        "object_name": {
+          "en": "Glasses",
+          "pt": "Óculos"
+        },
+        "icon": "👓",
+        "from_location_key": "bedroom",
+        "to_location_key": "street"
+      }
+    },
+    {
+      "ts": "2025-12-22T00:44:00.876327",
+      "kind": "move_object",
+      "payload": {
+        "object_id": "glasses",
+        "object_name": {
+          "en": "Glasses",
+          "pt": "Óculos"
+        },
+        "icon": "👓",
+        "from_location_key": "street",
+        "to_location_key": "living_room"
+      }
+    },
+    {
+      "ts": "2025-12-22T00:44:59.788561",
+      "kind": "move_object",
+      "payload": {
+        "object_id": "glasses",
+        "object_name": {
+          "en": "Glasses",
+          "pt": "Óculos"
+        },
+        "icon": "👓",
+        "from_location_key": "living_room",
+        "to_location_key": "street"
+      }
+    }
+  ]
+}

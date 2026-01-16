@@ -1,0 +1,11 @@
+Ola,
+
+Por favor confirme o seu email AnnaFinder abrindo este link:
+{verify_link}
+
+Este link expira em {expires_minutes} minutos.
+
+Se nao pediu isto, pode ignorar este email.
+
+Obrigado,
+{app_name}

@@ -1,0 +1,11 @@
+Hello,
+
+You have been invited to join an AnnaFinder household.
+
+Invite link:
+{link}
+
+This link expires in {expires_days} days.
+
+Thanks,
+{app_name}

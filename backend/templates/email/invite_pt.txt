@@ -1,0 +1,11 @@
+Ola,
+
+Foi convidado para juntar-se a um agregado do AnnaFinder.
+
+Link de convite:
+{link}
+
+Este link expira em {expires_days} dias.
+
+Obrigado,
+{app_name}

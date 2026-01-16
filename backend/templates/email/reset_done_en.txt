@@ -1,0 +1,7 @@
+Hello,
+
+Your AnnaFinder password was reset.
+If you did not make this change, please reset your password again and contact support.
+
+Thanks,
+{app_name}

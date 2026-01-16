@@ -1,0 +1,7 @@
+Ola,
+
+A sua palavra-passe do AnnaFinder foi reposta.
+Se nao fez esta alteracao, por favor reponha a palavra-passe de novo e contacte o suporte.
+
+Obrigado,
+{app_name}

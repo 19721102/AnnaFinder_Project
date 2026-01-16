@@ -1,0 +1,23 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+exclude = [
+  ".git",
+  ".next",
+  "node_modules",
+  "venv",
+  ".venv",
+  "__pycache__",
+  "backend/__pycache__",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = ["E501", "B008", "I001", "SIM105", "SIM108", "UP006", "UP017", "UP035", "UP045", "UP015"]
+
+[tool.ruff.format]
+line-ending = "lf"
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]

@@ -19,6 +19,14 @@ def existing_tables(con: sqlite3.Connection) -> set:
     return {row[0] for row in cur.fetchall()}
 
 
+TABLE_CHECK_QUERIES = {
+    "items": "SELECT COUNT(*) FROM items",
+    "events": "SELECT COUNT(*) FROM events",
+    "routines": "SELECT COUNT(*) FROM routines",
+    "family_members": "SELECT COUNT(*) FROM family_members",
+}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="SQLite restore with validation")
     parser.add_argument("--db", default=os.path.join("backend", "annafinder.db"))
@@ -45,9 +53,9 @@ def main() -> int:
         con = sqlite3.connect(db_path)
         try:
             tables = existing_tables(con)
-            for t in ["items", "events", "routines", "family_members"]:
-                if t in tables:
-                    con.execute(f"SELECT COUNT(*) FROM {t}")
+            for table, query in TABLE_CHECK_QUERIES.items():
+                if table in tables:
+                    con.execute(query)
             con.execute("SELECT 1")
         finally:
             con.close()

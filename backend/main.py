@@ -111,7 +111,7 @@ DEV_EXTRA_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3001",
 ]
 
-DEFAULT_ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver", "backend", "0.0.0.0"]
+DEFAULT_ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver", "backend"]
 KNOWN_TABLES = frozenset(
     {
         "items",
@@ -3122,19 +3122,23 @@ def list_events(
     con = db()
     cur = con.cursor()
 
-    cur.execute(f"SELECT COUNT(*) AS c FROM events{where_sql}", params)
+    count_sql = "SELECT COUNT(*) AS c FROM events"
+    if where_sql:
+        count_sql += where_sql
+    cur.execute(count_sql, params)
     total = cur.fetchone()["c"]
 
-    cur.execute(
-        f"""
+    query_sql = """
         SELECT id, ts, kind, message, details, actor, archived
         FROM events
-        {where_sql}
+    """
+    if where_sql:
+        query_sql += f"\n{where_sql}"
+    query_sql += """
         ORDER BY ts DESC
         LIMIT ? OFFSET ?
-        """,
-        params + [limit, offset],
-    )
+        """
+    cur.execute(query_sql, params + [limit, offset])
     items = [dict(r) for r in cur.fetchall()]
     con.close()
 
@@ -3191,15 +3195,16 @@ def export_events(
 
     con = db()
     cur = con.cursor()
-    cur.execute(
-        f"""
+    query_sql = """
         SELECT ts, kind, message, details, actor, archived
         FROM events
-        {where_sql}
+    """
+    if where_sql:
+        query_sql += f"\n{where_sql}"
+    query_sql += """
         ORDER BY ts DESC
-        """,
-        params,
-    )
+        """
+    cur.execute(query_sql, params)
     rows = [dict(r) for r in cur.fetchall()]
     con.close()
 

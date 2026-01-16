@@ -1,6 +1,6 @@
 {
   "patient": {
-    "name": "Oswaldo Tester",
+    "name": "Example Patient",
     "heart_rate": 72,
     "spo2": 98,
     "alert_level": "LOW",

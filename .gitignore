@@ -13,3 +13,6 @@ __pycache__/
 *.db
 *.sqlite*
 *.log
+
+# Security scan reports
+backend/bandit.json

@@ -1,28 +1,27 @@
 {
   "git": {
-    "head": "76c6b347b6219628c88a991146319f706186b00a",
+    "head": "7900dfc7cba2ceae4aab642e48a2973c6ecfe725",
     "recent_commits": [
+      "8572f8d fix(T-002): run Next dev in compose and resolve lightningcss",
+      "7900dfc fix(T-002): restore compose file and validate dev stack",
       "76c6b34 chore: ignore artifacts directory",
       "8888579 chore: ignore bandit report",
-      "c70a315 docs: add backend health report v3",
-      "2ac1ceb test(security): cover events filters and trusted hosts",
-      "6dfa457 fix(data): anonymize sample state"
+      "c70a315 docs: add backend health report v3"
     ]
   },
   "docker": {
     "compose_filename": "compose.yaml",
     "services": [
-      "postgres: healthy",
-      "backend: Up (health: healthy)",
-      "frontend: Up (health: healthy)"
+      "postgres: Up About a minute (healthy) (5432/tcp)",
+      "backend: Up 55 seconds (healthy) (0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp)",
+      "frontend: Up 44 seconds (healthy) (0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp)"
     ],
-    "backend_logs_tail": "INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)",
-    "frontend_logs_tail": "nginx/1.29.4 started and served GET / HTTP/1.1"
+    "backend_logs_tail": "INFO:     127.0.0.1:45560 - \\\"GET /healthz HTTP/1.1\\\" 200 OK\\n{\\\"timestamp\\\":\\\"2026-01-20T21:37:33.403314Z\\\",\\\"request_id\\\":\\\"7fb3c518-5e07-4c40-8c6f-9ccc6af9a357\\\",\\\"method\\\":\\\"GET\\\",\\\"path\\\":\\\"/healthz\\\",\\\"status_code\\\":200,\\\"duration_ms\\\":1.77,\\\"client_ip\\\":\\\"127.0.0.1\\\",\\\"env\\\":\\\"dev\\\"}",
+    "frontend_logs_tail": "> annafinder-frontend@0.1.0 dev\\n> next dev -H 0.0.0.0 -p 3000\\nNext.js 14.2.5 dev server ready\\nGET / 200 in 3683ms"
   },
   "checks": {
     "healthz_status": 200,
     "frontend_status": 200,
-    "openapi_status": 200,
     "pytest_exit_code": 0
   }
 }

@@ -33,3 +33,8 @@ pytest
 - Login attempts are throttled to 5 tries per 5-minute window per IP+email pair; excess attempts receive HTTP 429.
 - Mutating endpoints (`/auth/login`, `/auth/register`, `/household/*`, etc.) now reject requests without an allowed Origin/Referer to block login CSRF even from unauthenticated callers.
 - Production disables `/metrics` (`404`), and Trusted Host middleware enforces `ALLOWED_HOSTS` so the app only responds when the Host header matches an approved value.
+- **Docker Compose (dev stack):**
+  ```powershell
+  docker compose up --build
+  ```
+  Isso sobe Postgres, o backend (porta 8000) e o Next.js dev server (porta 3000) com hot reload.

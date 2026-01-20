@@ -40,6 +40,7 @@ from permissions import (
     ROLE_VIEWER,
     require_permission as require_permission_core,
 )
+from backend.security.passwords import hash_password, verify_password
 from security_events import build_actor, emit_event, safe_hash, sanitize_str
 from backend.api.v1.router import api_v1_router
 from backend.exception_handlers import register_exception_handlers
@@ -97,6 +98,9 @@ CSRF_SAFE_PATHS = {
     "/readyz",
     "/docs",
     "/openapi.json",
+    "/api/v1/auth/register",
+    "/api/v1/auth/login",
+    "/api/v1/auth/refresh",
 }
 CSRF_DEV_PATHS = {"/__test__/reset", "/__test__/emails/flush"}
 AUTH_STATE_PATHS = {
@@ -422,30 +426,6 @@ def read_version() -> str:
         except OSError:
             continue
     return APP_VERSION
-
-
-def hash_password(password: str, salt: Optional[str] = None, rounds: int = 120000) -> str:
-    if salt is None:
-        salt = secrets.token_hex(16)
-    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), rounds)
-    return f"pbkdf2_sha256${rounds}${salt}${dk.hex()}"
-
-
-def verify_password(password: str, stored: str) -> bool:
-    try:
-        algo, rounds_s, salt, hex_digest = stored.split("$", 3)
-    except ValueError:
-        return False
-    if algo != "pbkdf2_sha256":
-        return False
-    try:
-        rounds = int(rounds_s)
-    except ValueError:
-        return False
-    check = hashlib.pbkdf2_hmac(
-        "sha256", password.encode("utf-8"), salt.encode("utf-8"), rounds
-    ).hex()
-    return hmac.compare_digest(check, hex_digest)
 
 
 def hash_session_token(token: str) -> str:

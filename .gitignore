@@ -16,3 +16,6 @@ __pycache__/
 
 # Security scan reports
 backend/bandit.json
+
+# Build/test artifacts
+artifacts/

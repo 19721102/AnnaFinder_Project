@@ -1,0 +1,28 @@
+{
+  "git": {
+    "head": "76c6b347b6219628c88a991146319f706186b00a",
+    "recent_commits": [
+      "76c6b34 chore: ignore artifacts directory",
+      "8888579 chore: ignore bandit report",
+      "c70a315 docs: add backend health report v3",
+      "2ac1ceb test(security): cover events filters and trusted hosts",
+      "6dfa457 fix(data): anonymize sample state"
+    ]
+  },
+  "docker": {
+    "compose_filename": "compose.yaml",
+    "services": [
+      "postgres: healthy",
+      "backend: Up (health: healthy)",
+      "frontend: Up (health: healthy)"
+    ],
+    "backend_logs_tail": "INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)",
+    "frontend_logs_tail": "nginx/1.29.4 started and served GET / HTTP/1.1"
+  },
+  "checks": {
+    "healthz_status": 200,
+    "frontend_status": 200,
+    "openapi_status": 200,
+    "pytest_exit_code": 0
+  }
+}

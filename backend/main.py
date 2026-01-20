@@ -48,7 +48,9 @@ from security_events import build_actor, emit_event, safe_hash, sanitize_str
 async def lifespan(app: FastAPI):
     validate_email_settings()
     init_db()
-    seed_if_empty()
+    if APP_ENV == "dev" and SEED_ON_STARTUP:
+        logger.info("SEED_ON_STARTUP enabled; seeding demo data")
+        seed_if_empty()
     yield
 
 
@@ -60,6 +62,8 @@ app = FastAPI(
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ANNAFINDER_ENV = os.getenv("ANNAFINDER_ENV", "dev").strip().lower()
+APP_ENV = os.getenv("APP_ENV", ANNAFINDER_ENV).strip().lower()
+SEED_ON_STARTUP = os.getenv("SEED_ON_STARTUP", "0").strip() == "1"
 TEST_DB_PATH = os.path.join(BASE_DIR, "annafinder_test.db")
 DB_PATH = TEST_DB_PATH if ANNAFINDER_ENV == "test" else os.path.join(BASE_DIR, "annafinder.db")
 APP_VERSION = "0.1.0"

@@ -48,3 +48,5 @@ pytest
   alembic revision --autogenerate -m "message"
   ```
   Alembic reads `DATABASE_URL` from the environment so no credentials live in source control.
+- The Docker entrypoint runs `alembic upgrade head` before Uvicorn, so migrations are applied automatically in the dev stack.
+- Set `SEED_ON_STARTUP=1` (with `APP_ENV=dev`) to rerun the demo seed process; the default `0` keeps startups focused on migrations only.

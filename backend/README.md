@@ -38,3 +38,13 @@ pytest
   docker compose up --build
   ```
   Isso sobe Postgres, o backend (porta 8000) e o Next.js dev server (porta 3000) com hot reload.
+
+## Database & Migrations
+- Set `DATABASE_URL` (e.g., `postgresql://annafinder:changeme@postgres:5432/annafinder`) before running the backend locally or via Compose.
+- Run Alembic from the `backend/` directory:
+  ```powershell
+  alembic upgrade head
+  alembic downgrade -1
+  alembic revision --autogenerate -m "message"
+  ```
+  Alembic reads `DATABASE_URL` from the environment so no credentials live in source control.

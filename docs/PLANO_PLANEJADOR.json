@@ -1,0 +1,434 @@
+{
+  "overview": {
+    "goals": [
+      "Restaurar a FONTE ÚNICA DE VERDADE do projeto em /docs/PLANO_PLANEJADOR.json (este arquivo).",
+      "Consolidar um dev stack reprodutível (compose.yaml) com Postgres + FastAPI + Next.js dev (hot reload) e healthchecks.",
+      "Entregar um backend multi-tenant (famílias) com autenticação, autorização, CRUD principal (itens/locais/tags/eventos) e trilha de auditoria.",
+      "Entregar um painel web (Next.js) com UX 'English-first' (en-GB padrão) e alternador para Português como idioma secundário.",
+      "Manter segurança e qualidade com TDD, lint, scans e CI, permitindo atualizações frequentes (patches de segurança e modernização) com baixo risco."
+    ],
+    "non_functional": {
+      "performance": "API: P95 <= 250ms para endpoints CRUD simples em ambiente dev/local com Postgres; consultas paginadas por padrão; índices nas FKs e campos de filtro. Frontend: TTFB aceitável em dev; sem regressões de hot reload.",
+      "security": "Sem segredos commitados; .env.example obrigatório. Scans obrigatórios em CI: pip-audit sem vulnerabilidades conhecidas; bandit sem achados medium/high; validação de input (Pydantic) em todas as rotas; autenticação JWT com hashing forte; CORS/TrustedHosts configuráveis.",
+      "observability": "Logs estruturados (JSON ou key=value) com request_id/correlation_id, status_code, path e actor_id quando autenticado. Health endpoints (/healthz) determinísticos. Auditoria (audit_log) para ações sensíveis."
+    },
+    "risks": [
+      {
+        "id": "R1",
+        "desc": "O plano do planejador não estava versionado; resets/branches fizeram o arquivo desaparecer e bloquearam execução.",
+        "mitigation": "Commitar este plano como /docs/PLANO_PLANEJADOR.json; exigir gate em CI que falhe se o arquivo não existir."
+      },
+      {
+        "id": "R2",
+        "desc": "Ambiente Docker do Next pode quebrar por módulos nativos (ex.: lightningcss) e por bind mount sobrescrevendo node_modules do contêiner.",
+        "mitigation": "Manter volume nomeado para /app/node_modules; instalar deps com npm ci --include=optional; base node:22-slim; healthcheck interno. (Padrão já aplicado na T-002). "
+      },
+      {
+        "id": "R3",
+        "desc": "Migrações no entrypoint funcionam em dev, mas podem causar corrida em escala/produção.",
+        "mitigation": "Manter migrations no entrypoint apenas em APP_ENV=dev; documentar caminho de produção: job/pipeline de migração antes do deploy."
+      },
+      {
+        "id": "R4",
+        "desc": "Multi-tenancy pode vazar dados entre famílias se filtros/authorizations não forem centralizados.",
+        "mitigation": "Implementar dependências obrigatórias (current_user + require_family_access) e aplicar sempre; testes de autorização negativos em todas as rotas."
+      },
+      {
+        "id": "R5",
+        "desc": "i18n pode virar dívida se textos ficarem hardcoded e se o defaultLocale não for consistente.",
+        "mitigation": "Adotar i18n desde o início do painel, com en-GB como padrão e pt como secundário; lint/CI para impedir strings hardcoded nas views críticas. "
+      }
+    ]
+  },
+  "architecture": {
+    "modules": [
+      {
+        "name": "backend",
+        "responsibilities": [
+          "FastAPI API v1 com autenticação (JWT), autorização (RBAC/membership), e validação com Pydantic.",
+          "Persistência: SQLAlchemy 2.0 mappings + Alembic migrations em Postgres.",
+          "Domínio: families, users, memberships, locations, items, tags, events, attachments, audit_log.",
+          "Observabilidade: logs estruturados e health endpoints."
+        ],
+        "interfaces": [
+          "HTTP/JSON: /healthz; /openapi.json; /api/v1/",
+          "DB: Postgres via DATABASE_URL",
+          "CLI: alembic upgrade head; pytest; ruff; pip-audit; bandit"
+        ]
+      },
+      {
+        "name": "frontend",
+        "responsibilities": [
+          "Painel web em Next.js (dev server em Docker com hot reload).",
+          "i18n: en-GB default + toggle pt (secundário). ",
+          "Fluxos: login, seleção de família, CRUD de itens/locais/tags, timeline de eventos.",
+          "Consumo de API: NEXT_PUBLIC_API_BASE_URL + client wrapper."
+        ],
+        "interfaces": [
+          "HTTP: http://localhost:3000 (dev)",
+          "Env: NEXT_PUBLIC_API_BASE_URL",
+          "E2E: Playwright (quando habilitado no repo)"
+        ]
+      },
+      {
+        "name": "database",
+        "responsibilities": [
+          "Postgres 16 como store principal.",
+          "Migrações com Alembic (fonte única do schema).",
+          "Índices e constraints para integridade e performance."
+        ],
+        "interfaces": [
+          "DATABASE_URL (postgresql://user:pass@host:5432/db)",
+          "Alembic migrations (versions/)"
+        ],
+        "schema_hint": [
+          "users(id UUID PK, email UNIQUE, password_hash, display_name, created_at, updated_at, is_active)",
+          "families(id UUID PK, name, created_at, updated_at)",
+          "family_members(id UUID PK, family_id FK, user_id FK, role, created_at, UNIQUE(family_id,user_id))",
+          "locations(id UUID PK, family_id FK, name, description, created_at, updated_at)",
+          "items(id UUID PK, family_id FK, location_id FK NULL, name, description, status, created_at, updated_at)",
+          "tags(id UUID PK, family_id FK, name, UNIQUE(family_id,name))",
+          "item_tag_links(item_id FK, tag_id FK, UNIQUE(item_id,tag_id))",
+          "events(id UUID PK, family_id FK, item_id FK NULL, actor_user_id FK NULL, type, payload_json, created_at, idx on (family_id, created_at desc))",
+          "attachments(id UUID PK, family_id FK, item_id FK NULL, filename, content_type, size_bytes, storage_key/path, created_at)",
+          "audit_log(id UUID PK, family_id FK NULL, actor_user_id FK NULL, action, target_type, target_id, ip, user_agent, meta_json, created_at)"
+        ]
+      },
+      {
+        "name": "infra",
+        "responsibilities": [
+          "compose.yaml como manifesto único (preferido) para dev stack. ",
+          "Healthchecks (backend e frontend) e volumes nomeados (node_modules) para estabilidade.",
+          "Entry point do backend aplica migrações em dev antes de subir o servidor."
+        ],
+        "interfaces": [
+          "docker compose up --build -d",
+          "docker compose ps/logs/down"
+        ]
+      },
+      {
+        "name": "tests",
+        "responsibilities": [
+          "Backend: unit/integration tests (pytest), smoke tests de DB/migrations, testes de autorização.",
+          "Frontend: lint/test e, quando habilitado, e2e Playwright.",
+          "Pipelines: qualidade mínima e gates de segurança."
+        ],
+        "interfaces": [
+          "python -m pytest",
+          "ruff check .",
+          "pip-audit -r requirements.txt",
+          "bandit -r . -ll",
+          "npm --prefix frontend run lint/test (quando aplicável)"
+        ]
+      }
+    ],
+    "decisions": [
+      {
+        "adr": "ADR-001",
+        "choice": "Compose file único será compose.yaml (preferido) e sem duplicação docker-compose.*.",
+        "tradeoffs": "Pró: reduz ambiguidade e warnings, alinhado ao Compose spec. Contra: usuários antigos podem esperar docker-compose.yml; mitigado por README claro. "
+      },
+      {
+        "adr": "ADR-002",
+        "choice": "Backend usa FastAPI + SQLAlchemy 2.0 + Alembic + Postgres (DATABASE_URL via env).",
+        "tradeoffs": "Pró: stack madura, migrações controladas e tipadas; Contra: exige disciplina com sessões/transações e migrações. FastAPI dependencies com yield para fechar recursos corretamente. "
+      },
+      {
+        "adr": "ADR-003",
+        "choice": "Migrações aplicadas no entrypoint apenas em APP_ENV=dev (dev convenience).",
+        "tradeoffs": "Pró: dev stack sempre consistente; Contra: em escala pode causar corrida; produção deve usar job/pipeline de migração."
+      },
+      {
+        "adr": "ADR-004",
+        "choice": "Painel é English-first (en-GB defaultLocale) com Português como secundário e alternador no UI.",
+        "tradeoffs": "Pró: alinha mercado UK; Contra: exige disciplina i18n para evitar hardcode; mitigado por lint/checks e arquivos de tradução. "
+      },
+      {
+        "adr": "ADR-005",
+        "choice": "Autenticação via JWT (access/refresh) e password hashing forte; autorização por membership (family_members.role).",
+        "tradeoffs": "Pró: simples para MVP; Contra: rotação/revogação de tokens e segurança de refresh exigem cuidado; mitigado por expiração curta, armazenamento seguro e testes."
+      }
+    ]
+  },
+  "backlog": [
+    {
+      "id": "T-004",
+      "title": "Criar esqueleto de API v1 + padrões de erro + schemas base",
+      "module": "backend",
+      "depends_on": [
+        "T-003"
+      ],
+      "acceptance_criteria": [
+        "Existe router /api/v1 com versionamento (ex.: /api/v1).",
+        "Padrão de resposta de erro consistente (código interno + mensagem + detalhes) para 4xx/5xx previsíveis.",
+        "Schemas Pydantic base para entidades principais (User/Family/Location/Item/Tag/Event) com validações mínimas.",
+        "OpenAPI agrupa endpoints por tags e descreve modelos.",
+        "pytest e ruff continuam verdes."
+      ],
+      "quality_metrics": {
+        "coverage_min": "80%",
+        "latency_p95_ms": 250
+      },
+      "executor_prompt": "Você está no repo AnnaFinder. Objetivo: implementar T-004 (API v1 scaffolding + error model + pydantic schemas base) sem iniciar T-005.\n\nEscopo:\n1) Criar/ajustar roteamento /api/v1 (FastAPI routers) mantendo /healthz intacto.\n2) Definir um modelo de erro consistente (ex.: {\"error\": {\"code\": \"...\", \"message\": \"...\", \"details\": {...}}}) e handlers para HTTPException/ValidationError.\n3) Criar schemas Pydantic para User/Family/FamilyMember/Location/Item/Tag/Event/Attachment/AuditLog (MVP: campos essenciais + UUID + timestamps).\n4) Adicionar testes: \n - /healthz continua 200\n - um endpoint simples /api/v1/meta ou /api/v1/version retorna 200\n - handler de validação retorna o formato padronizado em 422\n\nRegras:\n- Não criar auth ainda.\n- Não mexer em models/migrations além do necessário para schemas.\n- Rodar: cd backend && pytest -q; ruff check .; pip-audit -r requirements.txt; bandit -r . -ll\n- Commit único: feat(T-004): api v1 scaffolding and error model\n\nSaída:\n- arquivos alterados\n- resultados dos comandos\n- hash do commit"
+    },
+    {
+      "id": "T-005",
+      "title": "Autenticação: hashing de senha + JWT access/refresh + endpoints /auth",
+      "module": "backend",
+      "depends_on": [
+        "T-004"
+      ],
+      "acceptance_criteria": [
+        "Endpoints mínimos: POST /api/v1/auth/register, POST /api/v1/auth/login, POST /api/v1/auth/refresh.",
+        "Senha armazenada como hash forte (não plaintext).",
+        "Access token tem expiração curta; refresh token expiração maior.",
+        "Testes: register/login/refresh happy-path e casos negativos (senha errada, email duplicado).",
+        "Nenhum segredo hardcoded; usar env para JWT_SECRET e .env.example atualizado."
+      ],
+      "quality_metrics": {
+        "coverage_min": "80%",
+        "latency_p95_ms": 250
+      },
+      "executor_prompt": "Implementar T-005 no backend AnnaFinder.\n\nEscopo:\n- Adicionar hashing de senha (biblioteca padrão segura) e utilitários.\n- Implementar JWT access + refresh (claims mínimos: sub=user_id, exp, iat).\n- Endpoints: /api/v1/auth/register, /login, /refresh.\n- Atualizar .env.example com JWT_SECRET e tempos de expiração.\n- Testes pytest para register/login/refresh e falhas.\n\nRegras:\n- Não implementar RBAC ainda.\n- Não criar UI.\n- Rodar: pytest -q; ruff check .; pip-audit; bandit.\n- Commit único: feat(T-005): auth jwt with tests\n\nSaída:\n- arquivos alterados\n- comandos e resultados\n- hash do commit"
+    },
+    {
+      "id": "T-006",
+      "title": "Autorização multi-tenant: membership por família + dependências require_family_access",
+      "module": "backend",
+      "depends_on": [
+        "T-005"
+      ],
+      "acceptance_criteria": [
+        "Existe dependency get_current_user (JWT) e require_family_access(family_id).",
+        "Rotas de domínio passam a exigir family_id (path ou header) e validam membership.",
+        "Testes negativos garantem: usuário A não acessa família B (403/404 conforme padrão).",
+        "Audit log básico para tentativas negadas (opcional se já existir infra)."
+      ],
+      "quality_metrics": {
+        "coverage_min": "82%",
+        "latency_p95_ms": 250
+      },
+      "executor_prompt": "Implementar T-006 (multi-tenant authz) no backend.\n\nEscopo:\n- Criar dependency get_current_user (usa JWT access).\n- Criar require_family_access(family_id) validando tabela family_members.\n- Padronizar como family_id é passado (recomendado: path /api/v1/families/{family_id}/...).\n- Adicionar testes: acesso permitido vs negado.\n\nRegras:\n- Não iniciar CRUD completo ainda; apenas wiring + 1 rota protegida de exemplo (ex.: GET /api/v1/families/{family_id}/me).\n- Rodar testes e scans.\n- Commit: feat(T-006): multi-tenant authorization gate\n\nSaída: lista de arquivos + resultados + hash"
+    },
+    {
+      "id": "T-007",
+      "title": "CRUD de Locations por família (inclui paginação e filtros simples)",
+      "module": "backend",
+      "depends_on": [
+        "T-006"
+      ],
+      "acceptance_criteria": [
+        "Endpoints: POST/GET(list)/GET(id)/PATCH/DELETE em /api/v1/families/{family_id}/locations.",
+        "Todas as operações exigem membership e filtram por family_id no DB.",
+        "Listagem paginada (limit/offset ou cursor) com valores default.",
+        "Testes: CRUD happy-path + isolamento multi-tenant."
+      ],
+      "quality_metrics": {
+        "coverage_min": "82%",
+        "latency_p95_ms": 250
+      },
+      "executor_prompt": "Implementar T-007 (Locations CRUD) no backend.\n\nEscopo:\n- Implementar router locations com authz multi-tenant.\n- Pydantic schemas request/response.\n- DB ops com SQLAlchemy session.\n- Paginação default (ex.: limit=50).\n- Testes pytest cobrindo CRUD e isolamento.\n\nRegras:\n- Não iniciar Items.\n- Rodar: pytest -q; ruff; pip-audit; bandit.\n- Commit: feat(T-007): locations crud with tenant isolation\n\nSaída: arquivos + comandos + hash"
+    },
+    {
+      "id": "T-008",
+      "title": "CRUD de Items por família (com vínculo opcional a Location)",
+      "module": "backend",
+      "depends_on": [
+        "T-007"
+      ],
+      "acceptance_criteria": [
+        "Endpoints: POST/GET(list)/GET(id)/PATCH/DELETE em /api/v1/families/{family_id}/items.",
+        "location_id é opcional e validado dentro da mesma família quando presente.",
+        "Listagem suporta filtros (ex.: location_id, status, q=nome) e paginação.",
+        "Testes: CRUD + validação de location cross-family (deve falhar)."
+      ],
+      "quality_metrics": {
+        "coverage_min": "83%",
+        "latency_p95_ms": 300
+      },
+      "executor_prompt": "Implementar T-008 (Items CRUD) no backend.\n\nEscopo:\n- Router items com authz.\n- Validar location_id pertence à família.\n- Filtros e paginação.\n- Testes cobrindo cenários negativos.\n\nRegras:\n- Não iniciar Tags/Eventos ainda.\n- Commit: feat(T-008): items crud with filters\n\nRodar: pytest/ruff/pip-audit/bandit.\nSaída: arquivos + resultados + hash"
+    },
+    {
+      "id": "T-009",
+      "title": "CRUD de Tags + vínculo Item-Tag (item_tag_links) com endpoints dedicados",
+      "module": "backend",
+      "depends_on": [
+        "T-008"
+      ],
+      "acceptance_criteria": [
+        "Endpoints tags: POST/GET(list)/DELETE em /api/v1/families/{family_id}/tags.",
+        "Endpoints vínculo: POST /items/{item_id}/tags/{tag_id} e DELETE correspondente.",
+        "Unique constraint (item_id, tag_id) respeitada (idempotência).",
+        "Testes: criar tag, vincular, desvincular, duplicado não cria erro 500."
+      ],
+      "quality_metrics": {
+        "coverage_min": "83%",
+        "latency_p95_ms": 300
+      },
+      "executor_prompt": "Implementar T-009 (Tags + ItemTag links).\n\nEscopo:\n- Router tags e router item-tags.\n- Regras multi-tenant (tag e item devem pertencer à mesma família).\n- Garantir idempotência no vínculo.\n- Testes.\n\nCommit: feat(T-009): tags and item-tag links\nRodar: pytest/ruff/pip-audit/bandit.\nSaída: arquivos + resultados + hash"
+    },
+    {
+      "id": "T-010",
+      "title": "Eventos (timeline): criação automática em mudanças e endpoint de listagem filtrável",
+      "module": "backend",
+      "depends_on": [
+        "T-009"
+      ],
+      "acceptance_criteria": [
+        "Cria eventos para operações relevantes (ex.: item created/updated/moved, tag linked/unlinked).",
+        "Endpoint GET /api/v1/families/{family_id}/events com filtros (item_id, type, date range) e paginação.",
+        "Payload dos eventos é JSON e não vaza dados de outras famílias.",
+        "Testes: ao criar/alterar item, evento aparece; filtros funcionam."
+      ],
+      "quality_metrics": {
+        "coverage_min": "84%",
+        "latency_p95_ms": 350
+      },
+      "executor_prompt": "Implementar T-010 (Events timeline).\n\nEscopo:\n- Adicionar camada mínima de event emission nas operações já existentes.\n- Implementar listagem de events com filtros e paginação.\n- Testes.\n\nCommit: feat(T-010): events timeline with filters\nRodar: pytest/ruff/pip-audit/bandit.\nSaída: arquivos + resultados + hash"
+    },
+    {
+      "id": "T-011",
+      "title": "Audit log e request context: middleware com request_id + actor + ação",
+      "module": "backend",
+      "depends_on": [
+        "T-010"
+      ],
+      "acceptance_criteria": [
+        "Middleware gera request_id (se ausente) e loga por request (path, status, duration).",
+        "Audit entries criados para ações sensíveis (auth, create/update/delete) com actor_user_id e family_id quando aplicável.",
+        "Não logar segredos (tokens/senhas).",
+        "Testes: pelo menos 1 rota cria audit_log (via fixture) e request_id aparece no log/response header."
+      ],
+      "quality_metrics": {
+        "coverage_min": "84%",
+        "latency_p95_ms": 400
+      },
+      "executor_prompt": "Implementar T-011 (audit log + request context).\n\nEscopo:\n- Middleware para request_id + logging.\n- Função utilitária para gravar audit_log em ações sensíveis.\n- Teste mínimo garantindo criação de audit_log.\n\nCommit: feat(T-011): audit logging and request context\nRodar: pytest/ruff/pip-audit/bandit.\nSaída: arquivos + resultados + hash"
+    },
+    {
+      "id": "T-012",
+      "title": "Frontend i18n English-first: en-GB default + PT toggle no painel",
+      "module": "frontend",
+      "depends_on": [
+        "T-002"
+      ],
+      "acceptance_criteria": [
+        "Idioma padrão do painel é en-GB (English-first). ",
+        "Existe alternador (EN/PT) no layout global e persistência da escolha (cookie ou localStorage).",
+        "Textos básicos do shell (nav, botões comuns, mensagens) estão em arquivos de tradução, sem hardcode.",
+        "README documenta como adicionar novas chaves e como trocar idioma."
+      ],
+      "quality_metrics": {
+        "coverage_min": "N/A",
+        "latency_p95_ms": 0
+      },
+      "executor_prompt": "Implementar T-012 no frontend (Next.js): i18n com English-first (en-GB) e Português como secundário.\n\nEscopo:\n- Configurar i18n routing (Next built-in ou biblioteca dedicada), com defaultLocale en-GB e locale pt.\n- Criar arquivos de mensagens (ex.: messages/en-GB.json, messages/pt.json) e usar nas views.\n- Implementar toggle EN/PT no layout e persistir escolha.\n\nRegras:\n- Não implementar telas de negócio ainda.\n- Garantir que o app sobe em docker compose e responde 200 em :3000.\n- Commit: feat(T-012): english-first i18n with language toggle\n\nSaída: arquivos alterados + comando para validar (docker compose up + curl -I :3000) + hash"
+    },
+    {
+      "id": "T-013",
+      "title": "Frontend: client HTTP tipado + configuração de API base + tratamento de erro padrão",
+      "module": "frontend",
+      "depends_on": [
+        "T-012",
+        "T-004"
+      ],
+      "acceptance_criteria": [
+        "Existe um API client (fetch wrapper) usando NEXT_PUBLIC_API_BASE_URL com timeout e parsing consistente.",
+        "Erros 4xx/5xx são exibidos com mensagem i18n (não hardcode).",
+        "Existe página simples /status que chama /healthz e mostra OK/FAIL."
+      ],
+      "quality_metrics": {
+        "coverage_min": "N/A",
+        "latency_p95_ms": 0
+      },
+      "executor_prompt": "Implementar T-013 no frontend.\n\nEscopo:\n- Criar lib/apiClient.ts (ou equivalente) com base URL, headers, timeout e parse.\n- Criar página /status que chama backend /healthz e mostra resultado.\n- Integrar mensagens i18n para OK/FAIL.\n\nRegras:\n- Não implementar login ainda.\n- Validar via docker compose (backend+frontend) e conferir /status na UI.\n- Commit: feat(T-013): typed api client and status page\n\nSaída: arquivos + passos de verificação + hash"
+    },
+    {
+      "id": "T-014",
+      "title": "CI mínimo: GitHub Actions para backend+frontend (lint/test/security) + gate do plano",
+      "module": "infra",
+      "depends_on": [
+        "T-003",
+        "T-012"
+      ],
+      "acceptance_criteria": [
+        "Workflow roda em PR e main: backend pytest/ruff/pip-audit/bandit.",
+        "Workflow roda frontend lint/build (e testes se existirem).",
+        "Job falha se /docs/PLANO_PLANEJADOR.json não existir.",
+        "Documentado no README como rodar localmente."
+      ],
+      "quality_metrics": {
+        "coverage_min": "80%",
+        "latency_p95_ms": 0
+      },
+      "executor_prompt": "Implementar T-014: CI com GitHub Actions.\n\nEscopo:\n- Criar .github/workflows/ci.yml com jobs:\n - backend: setup python, install, ruff, pytest, pip-audit, bandit\n - frontend: setup node, npm ci, lint, build\n - planner-plan gate: verificar que docs/PLANO_PLANEJADOR.json existe\n- Cache de dependências quando possível.\n\nRegras:\n- Não mexer em código de negócio.\n- Commit: feat(T-014): add CI pipelines and plan gate\n\nSaída: arquivos + como o workflow roda + hash"
+    },
+    {
+      "id": "T-015",
+      "title": "E2E mínimo (Playwright): levantar stack e validar health + home + status",
+      "module": "tests",
+      "depends_on": [
+        "T-013",
+        "T-014"
+      ],
+      "acceptance_criteria": [
+        "Playwright roda em modo local/CI e valida: frontend home 200 e /status mostra backend OK.",
+        "Scripts documentados no README.",
+        "Testes estáveis (sem sleeps fixos; usar waits apropriados)."
+      ],
+      "quality_metrics": {
+        "coverage_min": "N/A",
+        "latency_p95_ms": 0
+      },
+      "executor_prompt": "Implementar T-015 (E2E básico com Playwright).\n\nEscopo:\n- Criar teste e2e que abre http://localhost:3000 e navega para /status.\n- Assert que status é OK (baseado em texto i18n ou data-testids).\n- Adicionar scripts npm no frontend para rodar e2e.\n\nRegras:\n- Sem mudanças grandes na UI.\n- Commit: feat(T-015): add basic e2e smoke tests\n\nSaída: arquivos + comandos para executar + hash"
+    }
+  ],
+  "milestones": [
+    {
+      "name": "M0 — Restaurar Fonte Única de Verdade",
+      "tasks": []
+    },
+    {
+      "name": "M1 — Backend API Foundation + Auth",
+      "tasks": [
+        "T-004",
+        "T-005",
+        "T-006"
+      ]
+    },
+    {
+      "name": "M2 — CRUD Core + Timeline + Audit",
+      "tasks": [
+        "T-007",
+        "T-008",
+        "T-009",
+        "T-010",
+        "T-011"
+      ]
+    },
+    {
+      "name": "M3 — Frontend English-first + Integração Básica",
+      "tasks": [
+        "T-012",
+        "T-013"
+      ]
+    },
+    {
+      "name": "M4 — Qualidade e Entrega Contínua",
+      "tasks": [
+        "T-014",
+        "T-015"
+      ]
+    }
+  ],
+  "definition_of_done": [
+    "build ok (backend e frontend)",
+    "docker compose up --build sobe stack (backend healthy) e docker compose down encerra limpo",
+    "tests verdes (pytest -q; frontend lint/build; e2e quando aplicável)",
+    "lint ok (ruff; frontend lint)",
+    "security ok (pip-audit sem vulnerabilidades conhecidas; bandit sem medium/high)",
+    "sem segredos em repo; .env.example atualizado",
+    "docs atualizadas (README + STATUS_BACKEND.md/backend_status.json quando aplicável)",
+    "commit único por tarefa T-XXX com mensagem padronizada"
+  ]
+}

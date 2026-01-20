@@ -20,7 +20,6 @@ from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse, PlainTextResponse
-from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, Field
 from email_service import enqueue_email, render_email_body, send_pending_emails
 from permissions import (
@@ -42,6 +41,8 @@ from permissions import (
     require_permission as require_permission_core,
 )
 from security_events import build_actor, emit_event, safe_hash, sanitize_str
+from backend.api.v1.router import api_v1_router
+from backend.exception_handlers import register_exception_handlers
 
 
 @asynccontextmanager
@@ -209,6 +210,9 @@ if not logger.handlers:
     handler = logging.StreamHandler()
     logger.addHandler(handler)
 logger.setLevel(logging.INFO)
+
+register_exception_handlers(app)
+app.include_router(api_v1_router, prefix="/api/v1", tags=["v1"])
 
 _metrics_lock = threading.Lock()
 _metrics = {
@@ -1665,41 +1669,6 @@ async def request_logger(request: Request, call_next):
 
     response.headers["X-Request-Id"] = request_id
     return response
-
-
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    if exc.status_code in (401, 403):
-        detail = str(exc.detail)
-        if not detail.startswith("CSRF"):
-            session = get_session_from_cookie(request)
-            ctx = build_security_context(request, session)
-            emit_event(
-                {
-                    **ctx,
-                    "event": "AUTHZ_DENY",
-                    "severity": "MEDIUM" if exc.status_code == 401 else "HIGH",
-                    "outcome": "FAIL",
-                    "target": {"resource": sanitize_str(request.url.path)},
-                    "meta": {"status_code": exc.status_code},
-                }
-            )
-    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
-
-
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    ctx = build_security_context(request)
-    emit_event(
-        {
-            **ctx,
-            "event": "REQUEST_VALIDATION_FAIL",
-            "severity": "LOW",
-            "outcome": "FAIL",
-            "target": {"resource": sanitize_str(request.url.path)},
-        }
-    )
-    return JSONResponse(status_code=400, content={"detail": "Invalid request"})
 
 
 if ANNAFINDER_ENV == "test":

@@ -105,6 +105,14 @@ class Item(UUIDMixin, TimestampMixin, Base):
         "ItemTagLink", back_populates="item", cascade="all, delete-orphan"
     )
 
+    @property
+    def status(self) -> str:
+        return "active" if self.is_active else "inactive"
+
+    @property
+    def description(self) -> Optional[str]:
+        return self.notes
+
 
 class Tag(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "tags"

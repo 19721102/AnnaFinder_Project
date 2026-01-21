@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
-DEFAULT_SQLITE_URL = "sqlite:///./annafinder.db"
+BASE_DIR = Path(__file__).resolve().parents[1]
+ANNAFINDER_ENV = os.getenv("ANNAFINDER_ENV", "dev").strip().lower()
+default_db = "annafinder_test.db" if ANNAFINDER_ENV == "test" else "annafinder.db"
+DEFAULT_SQLITE_URL = f"sqlite:///{(BASE_DIR / default_db).as_posix()}"
 DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_SQLITE_URL)
 
 _connect_args = {}

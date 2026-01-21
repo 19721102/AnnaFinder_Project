@@ -27,6 +27,8 @@ def ensure_family_schema(reset_state):
     con = db()
     cur = con.cursor()
     cur.execute("DROP TABLE IF EXISTS locations")
+    cur.execute("DROP TABLE IF EXISTS items")
+    cur.execute("DROP TABLE IF EXISTS item_tag_links")
     cur.execute("DROP TABLE IF EXISTS family_members")
     cur.execute("DROP TABLE IF EXISTS families")
     cur.execute(
@@ -35,8 +37,8 @@ def ensure_family_schema(reset_state):
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             description TEXT,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
         """
     )
@@ -48,8 +50,8 @@ def ensure_family_schema(reset_state):
             user_id TEXT NOT NULL,
             role TEXT NOT NULL,
             is_owner INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(family_id, user_id)
         )
         """
@@ -62,8 +64,37 @@ def ensure_family_schema(reset_state):
             name TEXT NOT NULL,
             description TEXT,
             icon TEXT,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS items (
+            id TEXT PRIMARY KEY,
+            family_id TEXT NOT NULL,
+            location_id TEXT,
+            name TEXT NOT NULL,
+            description TEXT,
+            icon TEXT,
+            battery INTEGER NOT NULL DEFAULT 100,
+            notes TEXT,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS item_tag_links (
+            id TEXT PRIMARY KEY,
+            item_id TEXT NOT NULL,
+            tag_id TEXT NOT NULL,
+            UNIQUE(item_id, tag_id)
         )
         """
     )

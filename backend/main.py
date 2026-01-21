@@ -1275,11 +1275,38 @@ def reset_db() -> None:
         return
     try:
         if os.path.exists(DB_PATH):
+            try:
+                from backend.db import session as db_session
+
+                db_session.engine.dispose()
+            except ImportError:
+                pass
             os.remove(DB_PATH)
     except OSError:
         pass
+    _clear_db_schema()
     init_db()
     seed_if_empty()
+
+
+def _clear_db_schema() -> None:
+    con = db()
+    try:
+        cur = con.cursor()
+        cur.execute(
+            """
+            SELECT name
+            FROM sqlite_master
+            WHERE type = 'table'
+              AND name NOT LIKE 'sqlite_%'
+            """
+        )
+        tables = [row["name"] for row in cur.fetchall()]
+        for table in tables:
+            cur.execute(f"DROP TABLE IF EXISTS {table}")
+        con.commit()
+    finally:
+        con.close()
     with _metrics_lock:
         _metrics["requests_total"] = 0
         _metrics["status_2xx"] = 0

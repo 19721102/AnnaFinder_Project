@@ -1,3 +1,3 @@
-from backend.api.v1.routes import auth, families, locations, meta
+from backend.api.v1.routes import auth, families, items, locations, meta
 
-__all__ = ["auth", "families", "locations", "meta"]
+__all__ = ["auth", "families", "items", "locations", "meta"]

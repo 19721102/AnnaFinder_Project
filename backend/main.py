@@ -102,6 +102,9 @@ CSRF_SAFE_PATHS = {
     "/api/v1/auth/login",
     "/api/v1/auth/refresh",
 }
+CSRF_SAFE_PREFIXES = {
+    "/api/v1/families",
+}
 CSRF_DEV_PATHS = {"/__test__/reset", "/__test__/emails/flush"}
 AUTH_STATE_PATHS = {
     "/auth/login",
@@ -1540,6 +1543,7 @@ def emit_email_event(
 def _is_csrf_exempt_path(path: str) -> bool:
     return (
         path in CSRF_SAFE_PATHS
+        or any(path.startswith(prefix) for prefix in CSRF_SAFE_PREFIXES)
         or (ANNAFINDER_ENV in ("test", "dev") and path in CSRF_DEV_PATHS)
     )
 

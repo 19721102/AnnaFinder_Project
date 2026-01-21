@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from backend.api.v1.deps.auth import require_family_access
 from backend.db.session import get_session
+from backend.services.events import emit_event
 from models.entities import Item, ItemTagLink, Tag
 
 router = APIRouter()
@@ -50,6 +51,15 @@ def link_tag(
         return {"ok": True}
     link = ItemTagLink(item_id=item.id, tag_id=tag.id)
     session.add(link)
+    session.flush()
+    emit_event(
+        session,
+        family_id,
+        "tag.linked",
+        "Tag linked to item",
+        actor_user_id=UUID(membership["user_id"]),
+        payload={"item_id": str(item.id), "tag_id": str(tag.id)},
+    )
     session.commit()
     return {"ok": True}
 
@@ -76,5 +86,14 @@ def unlink_tag(
     if not link:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     session.delete(link)
+    session.flush()
+    emit_event(
+        session,
+        family_id,
+        "tag.unlinked",
+        "Tag unlinked from item",
+        actor_user_id=UUID(membership["user_id"]),
+        payload={"item_id": str(item_id), "tag_id": str(tag_id)},
+    )
     session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

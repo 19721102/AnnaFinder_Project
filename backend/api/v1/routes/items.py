@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from backend.api.v1.deps.auth import require_family_access
 from backend.db.session import get_session
+from backend.services.events import emit_event
 from models.entities import Item, Location
 
 router = APIRouter()
@@ -96,6 +97,20 @@ def create_item(
         location_id=payload.location_id,
     )
     session.add(item)
+    session.flush()
+    actor_id = UUID(membership["user_id"])
+    emit_event(
+        session,
+        family_id,
+        "item.created",
+        "Item created",
+        actor_user_id=actor_id,
+        payload={
+            "item_id": str(item.id),
+            "name": item.name,
+            "location_id": str(item.location_id) if item.location_id else None,
+        },
+    )
     session.commit()
     session.refresh(item)
     return item
@@ -158,6 +173,9 @@ def update_item(
     item = _get_family_item(session, family_id, item_id)
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+    previous_name = item.name
+    previous_description = item.description
+    previous_location = item.location_id
     if payload.location_id:
         _ensure_location_in_family(session, family_id, payload.location_id)
         item.location_id = payload.location_id
@@ -166,6 +184,49 @@ def update_item(
     if payload.description is not None:
         item.notes = payload.description
     session.add(item)
+    session.flush()
+    changed_fields: list[str] = []
+    if payload.name is not None and payload.name != previous_name:
+        changed_fields.append("name")
+    if payload.description is not None and payload.description != previous_description:
+        changed_fields.append("description")
+    moved = (
+        payload.location_id is not None
+        and payload.location_id != previous_location
+    )
+    if (
+        payload.location_id is not None
+        and payload.location_id != previous_location
+        and "location_id" not in changed_fields
+    ):
+        changed_fields.append("location_id")
+    actor_id = UUID(membership["user_id"])
+    if changed_fields:
+        emit_event(
+            session,
+            family_id,
+            "item.updated",
+            "Item updated",
+            actor_user_id=actor_id,
+            payload={
+                "item_id": str(item.id),
+                "fields_changed": list(changed_fields),
+            },
+        )
+    if moved:
+        emit_event(
+            session,
+            family_id,
+            "item.moved",
+            "Item moved",
+            actor_user_id=actor_id,
+            payload={
+                "item_id": str(item.id),
+                "from_location_id": str(previous_location) if previous_location else None,
+                "to_location_id": str(item.location_id) if item.location_id else None,
+                "fields_changed": list(changed_fields) or ["location_id"],
+            },
+        )
     session.commit()
     session.refresh(item)
     return item

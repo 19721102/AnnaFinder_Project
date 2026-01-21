@@ -88,6 +88,21 @@ def ensure_schema(reset_state):
         )
         """
     )
+    cur.execute("DROP TABLE IF EXISTS events")
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS events (
+            id TEXT PRIMARY KEY,
+            family_id TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            message TEXT NOT NULL,
+            details TEXT NOT NULL DEFAULT '',
+            actor_user_id TEXT,
+            ts TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            archived INTEGER NOT NULL DEFAULT 0
+        )
+        """
+    )
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS tags (

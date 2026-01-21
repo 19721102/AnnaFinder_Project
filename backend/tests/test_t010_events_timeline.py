@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import uuid
@@ -24,10 +25,14 @@ def reset_state():
 
 
 @pytest.fixture(autouse=True)
-def ensure_family_schema(reset_state):
+def ensure_schema(reset_state):
     con = db()
     cur = con.cursor()
+    cur.execute("DROP TABLE IF EXISTS item_tag_links")
+    cur.execute("DROP TABLE IF EXISTS tags")
+    cur.execute("DROP TABLE IF EXISTS events")
     cur.execute("DROP TABLE IF EXISTS items")
+    cur.execute("DROP TABLE IF EXISTS locations")
     cur.execute("DROP TABLE IF EXISTS family_members")
     cur.execute("DROP TABLE IF EXISTS families")
     cur.execute(
@@ -85,7 +90,6 @@ def ensure_family_schema(reset_state):
         )
         """
     )
-    cur.execute("DROP TABLE IF EXISTS events")
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS events (
@@ -100,7 +104,18 @@ def ensure_family_schema(reset_state):
         )
         """
     )
-
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS tags (
+            id TEXT PRIMARY KEY,
+            family_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(family_id, name)
+        )
+        """
+    )
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS item_tag_links (
@@ -209,159 +224,142 @@ def _create_item(
     return response.json()["id"]
 
 
-def test_items_crud_happy_path(client: TestClient) -> None:
-    email = "items-owner@example.com"
-    password = "ItemPass123!"
+def _create_tag(client: TestClient, family_id: str, token: str, name: str) -> str:
+    response = client.post(
+        f"/api/v1/families/{family_id}/tags", json={"name": name}, headers=_auth_header(token)
+    )
+    assert response.status_code == 201
+    return response.json()["id"]
+
+
+def _fetch_events() -> list[dict]:
+    con = db()
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT id, kind, message, details, actor_user_id, ts
+        FROM events
+        ORDER BY ts ASC
+        """
+    )
+    rows = [dict(r) for r in cur.fetchall()]
+    con.close()
+    return rows
+
+
+def test_events_emit_and_filters(client: TestClient) -> None:
+    email = "events-owner@example.com"
+    password = "EventPass123!"
     _register_user(client, email, password)
     token = _login_access_token(client, email, password)
     user_id = _get_user_id(email)
 
-    family_id = _create_family("Item Family")
+    family_id = _create_family("Event Family")
     _add_family_member(family_id, user_id, role="owner", is_owner=True)
-    location_id = _create_location(client, family_id, token, "Kitchen")
+    location_a = _create_location(client, family_id, token, "Storage")
+    location_b = _create_location(client, family_id, token, "Garage")
 
-    item_id = _create_item(
-        client,
-        family_id,
-        token,
-        "Fridge",
-        location_id=location_id,
-    )
-    detail_resp = client.get(
-        f"/api/v1/families/{family_id}/items/{item_id}", headers=_auth_header(token)
-    )
-    assert detail_resp.status_code == 200
-    assert detail_resp.json()["location_id"] == location_id
-    assert detail_resp.json()["status"] == "active"
-
-    detail = client.get(
-        f"/api/v1/families/{family_id}/items/{item_id}", headers=_auth_header(token)
-    )
-    assert detail.status_code == 200
-    assert detail.json()["name"] == "Fridge"
+    item_id = _create_item(client, family_id, token, "Backpack", location_id=location_a)
+    assert _fetch_events()[-1]["kind"] == "item.created"
 
     patch = client.patch(
         f"/api/v1/families/{family_id}/items/{item_id}",
-        json={"name": "Freezer"},
+        json={"name": "Travel Pack"},
         headers=_auth_header(token),
     )
-    print("PATCH REQ", patch.status_code, patch.json())
     assert patch.status_code == 200
-    assert patch.json()["name"] == "Freezer"
-
-    delete = client.delete(
-        f"/api/v1/families/{family_id}/items/{item_id}", headers=_auth_header(token)
+    patch_location = client.patch(
+        f"/api/v1/families/{family_id}/items/{item_id}",
+        json={"location_id": location_b},
+        headers=_auth_header(token),
     )
-    assert delete.status_code == 204
+    assert patch_location.status_code == 200
 
-    missing = client.get(
-        f"/api/v1/families/{family_id}/items/{item_id}", headers=_auth_header(token)
+    tag_id = _create_tag(client, family_id, token, "Essentials")
+    link_resp = client.post(
+        f"/api/v1/families/{family_id}/items/{item_id}/tags/{tag_id}",
+        headers=_auth_header(token),
     )
-    assert missing.status_code == 404
+    assert link_resp.status_code == 200
 
-
-def test_items_filters_pagination(client: TestClient) -> None:
-    email = "items-filter@example.com"
-    password = "FilterPass123!"
-    _register_user(client, email, password)
-    token = _login_access_token(client, email, password)
-    user_id = _get_user_id(email)
-
-    family_id = _create_family("Filter Family")
-    _add_family_member(family_id, user_id)
-    location_a = _create_location(client, family_id, token, "Garage")
-    location_b = _create_location(client, family_id, token, "Attic")
-
-    for room in ["House", "Garage", "Attic"]:
-        _create_item(
-            client,
-            family_id,
-            token,
-            room,
-            location_id=location_a if room != "Attic" else location_b,
-        )
-
-    list_resp = client.get(
-        f"/api/v1/families/{family_id}/items?location_id={location_a}", headers=_auth_header(token)
+    unlink_resp = client.delete(
+        f"/api/v1/families/{family_id}/items/{item_id}/tags/{tag_id}",
+        headers=_auth_header(token),
     )
-    assert list_resp.status_code == 200
-    data = list_resp.json()
-    assert data["total"] == 2
-    assert len(data["items"]) == 2
+    assert unlink_resp.status_code == 204
 
-    q_resp = client.get(
-        f"/api/v1/families/{family_id}/items?q=attic", headers=_auth_header(token)
-    )
-    assert q_resp.status_code == 200
-    assert q_resp.json()["total"] == 1
+    events = _fetch_events()
+    kinds = [entry["kind"] for entry in events]
+    assert "item.created" in kinds
+    assert kinds.count("item.updated") >= 2
+    assert "item.moved" in kinds
+    assert "tag.linked" in kinds
+    assert "tag.unlinked" in kinds
 
-    page_resp = client.get(
-        f"/api/v1/families/{family_id}/items?limit=2&offset=1", headers=_auth_header(token)
-    )
-    assert page_resp.status_code == 200
-    paged = page_resp.json()
-    assert paged["offset"] == 1
-    assert len(paged["items"]) == 2
-
-
-def test_items_isolation_and_location_validation(client: TestClient) -> None:
-    email = "items-tenant@example.com"
-    password = "TenantPass123!"
-    _register_user(client, email, password)
-    token = _login_access_token(client, email, password)
-    user_id = _get_user_id(email)
-
-    family_a = _create_family("Tenant Alpha")
-    family_b = _create_family("Tenant Beta")
-    _add_family_member(family_a, user_id)
-    beta_email = "items-beta@example.com"
-    beta_password = "BetaPass123!"
-    _register_user(client, beta_email, beta_password)
-    beta_token = _login_access_token(client, beta_email, beta_password)
-    beta_user_id = _get_user_id(beta_email)
-    _add_family_member(family_b, beta_user_id)
-    beta_location = _create_location(client, family_b, beta_token, "Beta Room")
-    other_item_id = _create_item(client, family_b, beta_token, "Secret", location_id=beta_location)
+    moved_event = next(entry for entry in events if entry["kind"] == "item.moved")
+    moved_payload = json.loads(moved_event["details"])
+    assert moved_payload["from_location_id"] == location_a
+    assert moved_payload["to_location_id"] == location_b
+    assert moved_payload["fields_changed"] == ["location_id"]
 
     resp = client.get(
-        f"/api/v1/families/{family_b}/items/{other_item_id}", headers=_auth_header(token)
+        f"/api/v1/families/{family_id}/events?type=item.moved", headers=_auth_header(token)
     )
-    assert resp.status_code == 404
-    error = resp.json()["error"]
-    assert error["message"] == "Family not found or access denied"
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data["items"]) == 1
+    assert data["items"][0]["kind"] == "item.moved"
+    assert data["items"][0]["payload"]["item_id"] == item_id
 
-    bad_location = _create_location(client, family_b, beta_token, "Beta Hangar")
-    bad_resp = client.post(
-        f"/api/v1/families/{family_a}/items",
-        json={"name": "Sneaky", "location_id": bad_location},
-        headers=_auth_header(token),
+    resp_by_item = client.get(
+        f"/api/v1/families/{family_id}/events?item_id={item_id}", headers=_auth_header(token)
     )
-    assert bad_resp.status_code == 404
-    assert bad_resp.json()["error"]["message"] == "Family not found or access denied"
+    assert resp_by_item.status_code == 200
+    assert resp_by_item.json()["total"] >= 4
+    assert all(event["payload"].get("item_id") == item_id for event in resp_by_item.json()["items"])
 
-
-def test_items_validation_and_auth_errors(client: TestClient) -> None:
-    family_id = _create_family("Solo Family")
-    response = client.post(
-        f"/api/v1/families/{family_id}/items",
-        json={"name": ""},
+    paged = client.get(
+        f"/api/v1/families/{family_id}/events?limit=2&offset=1", headers=_auth_header(token)
     )
-    assert response.status_code == 401
-    error = response.json()["error"]
-    assert error["code"] == "HTTP_ERROR"
+    assert paged.status_code == 200
+    paged_data = paged.json()
+    assert paged_data["limit"] == 2
+    assert paged_data["offset"] == 1
+    assert len(paged_data["items"]) == 2
 
-    email = "items-validate@example.com"
-    password = "ItemVal123!"
+
+def test_events_errors_and_access_controls(client: TestClient) -> None:
+    email = "events-guest@example.com"
+    password = "GuestPass123!"
     _register_user(client, email, password)
     token = _login_access_token(client, email, password)
     user_id = _get_user_id(email)
-    _add_family_member(family_id, user_id)
 
-    validation = client.post(
-        f"/api/v1/families/{family_id}/items",
-        json={"name": ""},
+    family_id = _create_family("Secure Family")
+    _add_family_member(family_id, user_id)
+    location_id = _create_location(client, family_id, token, "Hall")
+    _create_item(client, family_id, token, "Journal", location_id=location_id)
+
+    unauthorized = client.get(f"/api/v1/families/{family_id}/events")
+    assert unauthorized.status_code == 401
+    assert unauthorized.json()["error"]["code"] == "HTTP_ERROR"
+
+    other_family = _create_family("Other House")
+    forbidden = client.get(
+        f"/api/v1/families/{other_family}/events", headers=_auth_header(token)
+    )
+    assert forbidden.status_code == 404
+    assert forbidden.json()["error"]["code"] == "HTTP_ERROR"
+
+    invalid_limit = client.get(
+        f"/api/v1/families/{family_id}/events?limit=0", headers=_auth_header(token)
+    )
+    assert invalid_limit.status_code == 422
+    assert invalid_limit.json()["error"]["code"] == "VALIDATION_ERROR"
+
+    missing_item = client.get(
+        f"/api/v1/families/{family_id}/events?item_id={uuid.uuid4()}",
         headers=_auth_header(token),
     )
-    assert validation.status_code == 422
-    payload = validation.json()
-    assert payload["error"]["code"] == "VALIDATION_ERROR"
+    assert missing_item.status_code == 404
+    assert missing_item.json()["error"]["code"] == "HTTP_ERROR"

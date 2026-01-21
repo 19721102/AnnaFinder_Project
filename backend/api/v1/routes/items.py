@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from backend.api.v1.deps.auth import require_family_access
 from backend.db.session import get_session
+from backend.services.audit import write_audit
 from backend.services.events import emit_event
 from models.entities import Item, Location
 
@@ -111,6 +112,18 @@ def create_item(
             "location_id": str(item.location_id) if item.location_id else None,
         },
     )
+    write_audit(
+        session=session,
+        family_id=family_id,
+        actor_user_id=actor_id,
+        event_type="items.create",
+        target_type="item",
+        target_id=item.id,
+        payload={
+            "name": item.name,
+            "location_id": str(item.location_id) if item.location_id else None,
+        },
+    )
     session.commit()
     session.refresh(item)
     return item
@@ -201,7 +214,7 @@ def update_item(
     ):
         changed_fields.append("location_id")
     actor_id = UUID(membership["user_id"])
-    if changed_fields:
+    if changed_fields or moved:
         emit_event(
             session,
             family_id,
@@ -211,6 +224,19 @@ def update_item(
             payload={
                 "item_id": str(item.id),
                 "fields_changed": list(changed_fields),
+            },
+        )
+        write_audit(
+            session=session,
+            family_id=family_id,
+            actor_user_id=actor_id,
+            event_type="items.update",
+            target_type="item",
+            target_id=item.id,
+            payload={
+                "fields_changed": list(changed_fields),
+                "from_location_id": str(previous_location) if previous_location else None,
+                "to_location_id": str(item.location_id) if item.location_id else None,
             },
         )
     if moved:
@@ -243,5 +269,14 @@ def delete_item(
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
     session.delete(item)
+    write_audit(
+        session=session,
+        family_id=family_id,
+        actor_user_id=UUID(membership["user_id"]),
+        event_type="items.delete",
+        target_type="item",
+        target_id=item.id,
+        payload={"name": item.name},
+    )
     session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

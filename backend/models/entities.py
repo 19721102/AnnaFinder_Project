@@ -203,10 +203,10 @@ class Attachment(UUIDMixin, TimestampMixin, Base):
 class AuditLog(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "audit_log"
 
-    family_id: Mapped[uuid.UUID] = mapped_column(
+    family_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("families.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
     )
     actor_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
@@ -214,6 +214,14 @@ class AuditLog(UUIDMixin, TimestampMixin, Base):
     entity: Mapped[str] = mapped_column(String(64), nullable=False)
     action: Mapped[str] = mapped_column(String(64), nullable=False)
     details: Mapped[Optional[str]] = mapped_column(Text, default=None)
+    success: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
+    target_type: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    target_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
+    ip: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
+    user_agent: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
+    payload_json: Mapped[Optional[str]] = mapped_column(Text, default=None)
 
     family: Mapped[Family] = relationship("Family")
     actor: Mapped[Optional[User]] = relationship("User", foreign_keys=[actor_user_id], back_populates="audit_logs")

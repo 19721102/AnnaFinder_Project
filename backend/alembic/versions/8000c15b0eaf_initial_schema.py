@@ -42,11 +42,17 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     op.create_table('audit_log',
-    sa.Column('family_id', sa.UUID(), nullable=False),
+    sa.Column('family_id', sa.UUID(), nullable=True),
     sa.Column('actor_user_id', sa.UUID(), nullable=True),
     sa.Column('entity', sa.String(length=64), nullable=False),
     sa.Column('action', sa.String(length=64), nullable=False),
     sa.Column('details', sa.Text(), nullable=True),
+    sa.Column('success', sa.Boolean(), server_default='true', nullable=False),
+    sa.Column('target_type', sa.String(length=64), nullable=True),
+    sa.Column('target_id', sa.UUID(), nullable=True),
+    sa.Column('ip', sa.String(length=45), nullable=True),
+    sa.Column('user_agent', sa.String(length=256), nullable=True),
+    sa.Column('payload_json', sa.Text(), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),

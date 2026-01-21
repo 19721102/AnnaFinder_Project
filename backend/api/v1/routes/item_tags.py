@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from backend.api.v1.deps.auth import require_family_access
 from backend.db.session import get_session
+from backend.services.audit import write_audit
 from backend.services.events import emit_event
 from models.entities import Item, ItemTagLink, Tag
 
@@ -60,6 +61,15 @@ def link_tag(
         actor_user_id=UUID(membership["user_id"]),
         payload={"item_id": str(item.id), "tag_id": str(tag.id)},
     )
+    write_audit(
+        session=session,
+        family_id=family_id,
+        actor_user_id=UUID(membership["user_id"]),
+        event_type="item_tags.link",
+        target_type="item_tag_link",
+        target_id=link.id,
+        payload={"item_id": str(item.id), "tag_id": str(tag.id)},
+    )
     session.commit()
     return {"ok": True}
 
@@ -85,6 +95,7 @@ def unlink_tag(
     ).scalar_one_or_none()
     if not link:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
+    link_id = link.id
     session.delete(link)
     session.flush()
     emit_event(
@@ -93,6 +104,15 @@ def unlink_tag(
         "tag.unlinked",
         "Tag unlinked from item",
         actor_user_id=UUID(membership["user_id"]),
+        payload={"item_id": str(item_id), "tag_id": str(tag_id)},
+    )
+    write_audit(
+        session=session,
+        family_id=family_id,
+        actor_user_id=UUID(membership["user_id"]),
+        event_type="item_tags.unlink",
+        target_type="item_tag_link",
+        target_id=link_id,
         payload={"item_id": str(item_id), "tag_id": str(tag_id)},
     )
     session.commit()

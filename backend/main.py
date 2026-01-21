@@ -805,6 +805,27 @@ def init_db() -> None:
 
     cur.execute(
         """
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id TEXT PRIMARY KEY,
+            family_id TEXT,
+            actor_user_id TEXT,
+            entity TEXT NOT NULL,
+            action TEXT NOT NULL,
+            details TEXT,
+            success INTEGER NOT NULL DEFAULT 1,
+            target_type TEXT,
+            target_id TEXT,
+            ip TEXT,
+            user_agent TEXT,
+            payload_json TEXT,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
+    cur.execute(
+        """
         CREATE TABLE IF NOT EXISTS routines (
             id TEXT PRIMARY KEY,
             household_id TEXT NOT NULL DEFAULT '',

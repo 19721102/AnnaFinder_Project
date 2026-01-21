@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from backend.api.v1.deps.auth import require_family_access
 from backend.db.session import get_session
+from backend.services.audit import write_audit
 from models.entities import Tag
 
 router = APIRouter()
@@ -50,6 +51,16 @@ def create_tag(
         )
     tag = Tag(family_id=family_id, name=label)
     session.add(tag)
+    session.flush()
+    write_audit(
+        session=session,
+        family_id=family_id,
+        actor_user_id=UUID(membership["user_id"]),
+        event_type="tags.create",
+        target_type="tag",
+        target_id=tag.id,
+        payload={"name": tag.name},
+    )
     session.commit()
     session.refresh(tag)
     return tag
@@ -81,4 +92,13 @@ def delete_tag(
             detail="Tag not found",
         )
     session.delete(tag)
+    write_audit(
+        session=session,
+        family_id=family_id,
+        actor_user_id=UUID(membership["user_id"]),
+        event_type="tags.delete",
+        target_type="tag",
+        target_id=tag.id,
+        payload={"name": tag.name},
+    )
     session.commit()

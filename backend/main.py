@@ -41,6 +41,9 @@ from permissions import (
     require_permission as require_permission_core,
 )
 from backend.security.passwords import hash_password, verify_password
+from backend.db.migrations import alembic_upgrade_head
+from backend.db.seed import seed_demo_data
+from backend.db.session import DATABASE_URL, SessionLocal
 from security_events import build_actor, emit_event, safe_hash, sanitize_str
 from backend.api.v1.router import api_v1_router
 from backend.exception_handlers import register_exception_handlers
@@ -101,6 +104,9 @@ CSRF_SAFE_PATHS = {
     "/api/v1/auth/register",
     "/api/v1/auth/login",
     "/api/v1/auth/refresh",
+    "/auth/register",
+    "/auth/login",
+    "/auth/refresh",
 }
 CSRF_SAFE_PREFIXES = {
     "/api/v1/families",
@@ -1305,9 +1311,12 @@ def reset_db() -> None:
             os.remove(DB_PATH)
     except OSError:
         pass
-    _clear_db_schema()
-    init_db()
-    seed_if_empty()
+    alembic_upgrade_head(DATABASE_URL)
+    session = SessionLocal()
+    try:
+        seed_demo_data(session)
+    finally:
+        session.close()
 
 
 def _clear_db_schema() -> None:

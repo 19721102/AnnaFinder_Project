@@ -36,6 +36,7 @@ class User(UUIDMixin, TimestampMixin, Base):
 
     email: Mapped[str] = mapped_column(String(254), nullable=False, unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+    email_verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=None)
     full_name: Mapped[Optional[str]] = mapped_column(String(192), default=None)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
 

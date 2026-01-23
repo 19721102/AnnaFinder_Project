@@ -5,6 +5,7 @@ from backend.api.v1.routes import (
     audit as audit_routes,
     events as events_routes,
     families as families_routes,
+    families_bootstrap as families_bootstrap_routes,
     item_tags as item_tag_routes,
     items as items_routes,
     locations as locations_routes,
@@ -17,6 +18,7 @@ api_v1_router = APIRouter()
 api_v1_router.include_router(meta_routes.router, tags=["v1"])
 api_v1_router.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
 api_v1_router.include_router(families_routes.router, tags=["families"])
+api_v1_router.include_router(families_bootstrap_routes.router, tags=["families"])
 api_v1_router.include_router(locations_routes.router, tags=["locations"])
 api_v1_router.include_router(items_routes.router, tags=["items"])
 api_v1_router.include_router(tags_routes.router, tags=["tags"])

@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import os
+import secrets
 import sqlite3
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
 from jwt import PyJWTError
 from pydantic import BaseModel, Field, field_validator
 
@@ -24,6 +25,8 @@ router = APIRouter()
 BASE_DIR = Path(__file__).resolve().parents[3]
 ENV = os.getenv("ANNAFINDER_ENV", "dev").strip().lower()
 DB_PATH = BASE_DIR / ("annafinder_test.db" if ENV == "test" else "annafinder.db")
+CSRF_COOKIE_NAME = "anna_csrf"
+CSRF_TTL_SECONDS = 60 * 60 * 12
 
 
 def _connect() -> sqlite3.Connection:
@@ -63,6 +66,22 @@ def _normalize_email(value: str) -> str:
     if "@" not in email or email.startswith("@") or email.endswith("@"):
         raise ValueError("invalid email")
     return email
+
+
+def ensure_csrf_cookie(response: Response, request: Request, rotate: bool = False) -> str:
+    token = request.cookies.get(CSRF_COOKIE_NAME)
+    if rotate or not token:
+        token = secrets.token_urlsafe(32)
+        response.set_cookie(
+            key=CSRF_COOKIE_NAME,
+            value=token,
+            httponly=False,
+            samesite="strict",
+            secure=ENV == "prod",
+            max_age=CSRF_TTL_SECONDS,
+            path="/",
+        )
+    return token
 
 
 class RegisterPayload(BaseModel):
@@ -137,7 +156,7 @@ def register(payload: RegisterPayload, request: Request) -> RegisterResponse:
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(payload: LoginPayload, request: Request) -> TokenResponse:
+def login(payload: LoginPayload, request: Request, response: Response) -> TokenResponse:
     user = _get_user_by_email(payload.email.lower())
     if not user or not verify_password(payload.password, user["password_hash"]):
         write_audit(
@@ -156,6 +175,7 @@ def login(payload: LoginPayload, request: Request) -> TokenResponse:
         request=request,
         payload={"email": payload.email.lower()},
     )
+    ensure_csrf_cookie(response, request, rotate=True)
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,

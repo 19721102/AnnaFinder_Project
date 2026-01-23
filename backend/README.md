@@ -33,3 +33,20 @@ pytest
 - Login attempts are throttled to 5 tries per 5-minute window per IP+email pair; excess attempts receive HTTP 429.
 - Mutating endpoints (`/auth/login`, `/auth/register`, `/household/*`, etc.) now reject requests without an allowed Origin/Referer to block login CSRF even from unauthenticated callers.
 - Production disables `/metrics` (`404`), and Trusted Host middleware enforces `ALLOWED_HOSTS` so the app only responds when the Host header matches an approved value.
+- **Docker Compose (dev stack):**
+  ```powershell
+  docker compose up --build
+  ```
+  Isso sobe Postgres, o backend (porta 8000) e o Next.js dev server (porta 3000) com hot reload.
+
+## Database & Migrations
+- Set `DATABASE_URL` (e.g., `postgresql://annafinder:changeme@postgres:5432/annafinder`) before running the backend locally or via Compose.
+- Run Alembic from the `backend/` directory:
+  ```powershell
+  alembic upgrade head
+  alembic downgrade -1
+  alembic revision --autogenerate -m "message"
+  ```
+  Alembic reads `DATABASE_URL` from the environment so no credentials live in source control.
+- The Docker entrypoint runs `alembic upgrade head` before Uvicorn, so migrations are applied automatically in the dev stack.
+- Set `SEED_ON_STARTUP=1` (with `APP_ENV=dev`) to rerun the demo seed process; the default `0` keeps startups focused on migrations only.

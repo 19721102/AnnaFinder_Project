@@ -406,6 +406,11 @@
       "id": "T-021",
       "title": "Baseline Security Headers (backend + frontend)",
       "module": "infra"
+    },
+    {
+      "id": "T-022",
+      "title": "CSP report-only + report endpoint",
+      "module": "infra"
     }
   ],
   "milestones": [

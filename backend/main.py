@@ -106,9 +106,11 @@ CSRF_SAFE_PATHS = {
     "/api/v1/auth/register",
     "/api/v1/auth/login",
     "/api/v1/auth/refresh",
+    "/__csp_report",
 }
 CSRF_SAFE_PREFIXES = set()
 CSRF_DEV_PATHS = {"/__test__/reset", "/__test__/emails/flush"}
+MAX_CSP_REPORT_BYTES = 10 * 1024
 AUTH_STATE_PATHS = {
     "/auth/login",
     "/auth/register",
@@ -1802,6 +1804,24 @@ if ANNAFINDER_ENV == "test":
         rows = [dict(r) for r in cur.fetchall()]
         con.close()
         return {"items": rows}
+
+
+@app.post("/__csp_report")
+async def csp_report(request: Request) -> Response:
+    body = await request.body()
+    if len(body) > MAX_CSP_REPORT_BYTES:
+        return Response(status_code=413)
+    logger.info(
+        json.dumps(
+            {
+                "event": "CSP_REPORT",
+                "size": len(body),
+                "env": ANNAFINDER_ENV,
+                "path": request.url.path,
+            }
+        )
+    )
+    return Response(status_code=204)
 
 
 @app.post("/auth/register")

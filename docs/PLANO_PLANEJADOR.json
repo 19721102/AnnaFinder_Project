@@ -396,6 +396,11 @@
       "id": "T-019",
       "title": "GitHub templates: issue forms + PR template",
       "module": "repo"
+    },
+    {
+      "id": "T-020",
+      "title": "Repo governance: CODEOWNERS + branch protection checklist",
+      "module": "infra"
     }
   ],
   "milestones": [

@@ -16,3 +16,21 @@ def test_healthz_endpoint_is_open() -> None:
     response = client.get("/healthz")
     assert response.status_code == 200
     assert response.json().get("status") == "ok"
+
+
+def test_healthz_includes_security_headers() -> None:
+    with TestClient(app) as client:
+        response = client.get("/healthz")
+    assert response.headers.get("x-content-type-options") == "nosniff"
+    assert response.headers.get("referrer-policy") == "no-referrer"
+    assert (
+        response.headers.get("permissions-policy") == "geolocation=(), microphone=(), camera=()"
+    )
+
+
+def test_auth_login_sets_cache_control() -> None:
+    payload = {"email": "demo@annafinder.local", "password": "Demo1234!"}
+    with TestClient(app) as client:
+        response = client.post("/api/v1/auth/login", json=payload)
+    assert response.status_code == 200
+    assert response.headers.get("cache-control") == "no-store"

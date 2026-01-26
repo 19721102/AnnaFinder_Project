@@ -1756,6 +1756,25 @@ async def request_logger(request: Request, call_next):
     return response
 
 
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response: Response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Referrer-Policy", "no-referrer")
+    response.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+
+    path = request.url.path or ""
+    if path.startswith("/auth") or path.startswith("/api/v1/auth"):
+        response.headers["Cache-Control"] = "no-store"
+
+    if ANNAFINDER_ENV == "prod" and BASE_URL.startswith("https://"):
+        response.headers.setdefault(
+            "Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload"
+        )
+
+    return response
+
+
 if ANNAFINDER_ENV == "test":
 
     @app.post("/__test__/reset")

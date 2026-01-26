@@ -401,6 +401,11 @@
       "id": "T-020",
       "title": "Repo governance: CODEOWNERS + branch protection checklist",
       "module": "infra"
+    },
+    {
+      "id": "T-021",
+      "title": "Baseline Security Headers (backend + frontend)",
+      "module": "infra"
     }
   ],
   "milestones": [

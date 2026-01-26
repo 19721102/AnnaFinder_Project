@@ -381,6 +381,11 @@
         "latency_p95_ms": 0
       },
       "executor_prompt": "Implementar T-015 (E2E básico com Playwright).\n\nEscopo:\n- Criar teste e2e que abre http://localhost:3000 e navega para /status.\n- Assert que status é OK (baseado em texto i18n ou data-testids).\n- Adicionar scripts npm no frontend para rodar e2e.\n\nRegras:\n- Sem mudanças grandes na UI.\n- Commit: feat(T-015): add basic e2e smoke tests\n\nSaída: arquivos + comandos para executar + hash"
+    },
+    {
+      "id": "T-016",
+      "title": "Release checklist + docs + versioning (v0.1.0)",
+      "module": "repo"
     }
   ],
   "milestones": [

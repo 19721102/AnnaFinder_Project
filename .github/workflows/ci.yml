@@ -1,0 +1,82 @@
+$name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plan_validate:
+    name: Plan gate (JSON)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Validate planner JSON exists + is valid
+        run: |
+          test -f docs/PLANO_PLANEJADOR.json
+          python -m json.tool docs/PLANO_PLANEJADOR.json > /dev/null
+
+  backend_gates:
+    name: Backend gates (pytest/ruff/pip-audit/bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "backend/requirements.txt"
+      - name: Install deps + tools
+        working-directory: backend
+        run: |
+          python -m pip install -U pip
+          pip install -r requirements.txt
+          pip install ruff bandit pip-audit
+      - name: Pytest
+        working-directory: backend
+        run: python -m pytest -q
+      - name: Ruff
+        working-directory: backend
+        run: ruff check .
+      - name: pip-audit
+        working-directory: backend
+        run: pip-audit -r requirements.txt
+      - name: Bandit
+        working-directory: backend
+        run: bandit -r . -ll
+
+  frontend_gates:
+    name: Frontend gates (lint/build/test)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+      - name: Install
+        working-directory: frontend
+        run: npm ci
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+      - name: Test (if present)
+        working-directory: frontend
+        run: npm run test --if-present
+

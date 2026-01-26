@@ -106,9 +106,11 @@ CSRF_SAFE_PATHS = {
     "/api/v1/auth/register",
     "/api/v1/auth/login",
     "/api/v1/auth/refresh",
+    "/__csp_report",
 }
 CSRF_SAFE_PREFIXES = set()
 CSRF_DEV_PATHS = {"/__test__/reset", "/__test__/emails/flush"}
+MAX_CSP_REPORT_BYTES = 10 * 1024
 AUTH_STATE_PATHS = {
     "/auth/login",
     "/auth/register",
@@ -1756,6 +1758,25 @@ async def request_logger(request: Request, call_next):
     return response
 
 
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response: Response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Referrer-Policy", "no-referrer")
+    response.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+
+    path = request.url.path or ""
+    if path.startswith("/auth") or path.startswith("/api/v1/auth"):
+        response.headers["Cache-Control"] = "no-store"
+
+    if ANNAFINDER_ENV == "prod" and BASE_URL.startswith("https://"):
+        response.headers.setdefault(
+            "Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload"
+        )
+
+    return response
+
+
 if ANNAFINDER_ENV == "test":
 
     @app.post("/__test__/reset")
@@ -1783,6 +1804,24 @@ if ANNAFINDER_ENV == "test":
         rows = [dict(r) for r in cur.fetchall()]
         con.close()
         return {"items": rows}
+
+
+@app.post("/__csp_report")
+async def csp_report(request: Request) -> Response:
+    body = await request.body()
+    if len(body) > MAX_CSP_REPORT_BYTES:
+        return Response(status_code=413)
+    logger.info(
+        json.dumps(
+            {
+                "event": "CSP_REPORT",
+                "size": len(body),
+                "env": ANNAFINDER_ENV,
+                "path": request.url.path,
+            }
+        )
+    )
+    return Response(status_code=204)
 
 
 @app.post("/auth/register")

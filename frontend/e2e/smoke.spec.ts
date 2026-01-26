@@ -11,6 +11,15 @@ if (isPlaywright) {
     expect(response?.status()).toBe(200);
     await page.waitForSelector('body');
 
+    const cspHeader = response?.headers()['content-security-policy-report-only'];
+    expect(cspHeader).toBeTruthy();
+    expect(cspHeader).toContain('report-to csp-endpoint');
+
+    const reportResponse = await request.post(`${backendBaseUrl}/__csp_report`, {
+      data: { timestamp: Date.now() },
+    });
+    expect(reportResponse.status()).toBe(204);
+
     const health = await request.get(`${backendBaseUrl}/healthz`);
     expect(health.status()).toBe(200);
     const healthJson = await health.json();

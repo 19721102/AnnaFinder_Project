@@ -386,6 +386,16 @@
       "id": "T-016",
       "title": "Release checklist + docs + versioning (v0.1.0)",
       "module": "repo"
+    },
+    {
+      "id": "T-018",
+      "title": "Repo governance: CODEOWNERS + PR/issue templates + rulesets doc",
+      "module": "infra"
+    },
+    {
+      "id": "T-019",
+      "title": "GitHub templates: issue forms + PR template",
+      "module": "repo"
     }
   ],
   "milestones": [

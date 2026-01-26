@@ -6,7 +6,8 @@
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
     "lint": "next lint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "cross-env PLAYWRIGHT_E2E=1 playwright test"
   },
   "dependencies": {
     "next": "14.2.5",
@@ -14,12 +15,14 @@
     "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@playwright/test": "1.57.0",
     "@testing-library/jest-dom": "^6.0.2",
     "@testing-library/react": "^15.0.0",
     "@testing-library/user-event": "^14.5.0",
     "eslint": "^8.49.0",
     "eslint-config-next": "14.2.5",
     "jsdom": "^23.0.0",
+    "cross-env": "^7.0.3",
     "vitest": "^3.0.0"
   }
 }

@@ -10,12 +10,13 @@ import secrets
 import sqlite3
 import threading
 import time
+from time import monotonic
 from collections import deque, defaultdict
 import uuid
 import zipfile
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Deque, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Deque, List, Optional, Tuple
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -1818,8 +1819,9 @@ async def csp_report(request: Request) -> Response:
 
     content_type = request.headers.get("content-type", "")
     media_type = content_type.split(";", 1)[0].strip().lower()
-    if media_type != "application/reports+json":
-        return _csp_error(415, "CSP reports must use application/reports+json")
+    allowed_media_types = {"application/reports+json", "application/csp-report"}
+    if media_type not in allowed_media_types:
+        return _csp_error(415, "CSP reports must use an allowed content-type")
 
     content_length = request.headers.get("content-length")
     if content_length:

@@ -13,6 +13,7 @@ const cspDirectives = [
   "form-action 'self'",
   "report-to csp-endpoint",
   `report-uri ${backendBaseUrl}/__csp_report`,
+  "report-uri /__csp_report",
 ];
 
 const nextConfig = {

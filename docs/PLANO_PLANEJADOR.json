@@ -417,6 +417,11 @@
       "id": "T-023",
       "title": "CSP report endpoint hardening",
       "module": "infra"
+    },
+    {
+      "id": "T-024",
+      "title": "CSP reporting compatibility + reporting API content-types",
+      "module": "infra"
     }
   ],
   "milestones": [

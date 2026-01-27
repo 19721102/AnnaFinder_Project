@@ -1,5 +1,3 @@
-import json
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -25,6 +23,16 @@ def clear_rate_limits():
 def test_csp_report_accepts_valid_request():
     with TestClient(app) as client:
         response = _post_csp_report(client, b'{"foo": "bar"}')
+    assert response.status_code == 204
+
+
+def test_csp_report_accepts_legacy_content_type():
+    with TestClient(app) as client:
+        response = _post_csp_report(
+            client,
+            b'{"foo": "bar"}',
+            headers={"Content-Type": "application/csp-report"},
+        )
     assert response.status_code == 204
 
 

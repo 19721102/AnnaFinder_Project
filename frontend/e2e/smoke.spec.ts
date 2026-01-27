@@ -14,6 +14,7 @@ if (isPlaywright) {
     const cspHeader = response?.headers()['content-security-policy-report-only'];
     expect(cspHeader).toBeTruthy();
     expect(cspHeader).toContain('report-to csp-endpoint');
+    expect(cspHeader).toContain('report-uri /__csp_report');
 
     const reportResponse = await request.post(`${backendBaseUrl}/__csp_report`, {
       data: { timestamp: Date.now() },

@@ -435,6 +435,12 @@
       "title": "Docker compose healthchecks + CI wait for /en/",
       "module": "infra"
     }
+    ,
+    {
+      "id": "T-027",
+      "title": "CI compose smoke gate",
+      "module": "infra"
+    }
   ],
   "milestones": [
     {

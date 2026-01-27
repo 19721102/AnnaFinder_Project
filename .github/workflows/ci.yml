@@ -80,6 +80,29 @@ jobs:
         working-directory: frontend
         run: npm run test --if-present
 
+  compose_smoke:
+    name: Compose smoke gate
+    needs: [backend_gates, frontend_gates]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Start stack
+        run: |
+          set -euo pipefail
+          if docker compose up --help | grep -q -- '--wait'; then
+            docker compose up --build -d --wait --wait-timeout 180
+          else
+            docker compose up --build -d
+          fi
+      - name: Check backend
+        run: curl -fsS http://127.0.0.1:8000/healthz
+      - name: Check frontend
+        run: curl -fsS http://127.0.0.1:3000/en/
+      - name: Tear down stack
+        if: always()
+        run: docker compose down --volumes
+
   e2e_playwright:
     name: Playwright E2E smoke
     needs: [backend_gates, frontend_gates]

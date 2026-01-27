@@ -412,6 +412,12 @@
       "title": "CSP report-only + report endpoint",
       "module": "infra"
     }
+    ,
+    {
+      "id": "T-023",
+      "title": "CSP report endpoint hardening",
+      "module": "infra"
+    }
   ],
   "milestones": [
     {

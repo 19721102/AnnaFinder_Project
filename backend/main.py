@@ -10,11 +10,12 @@ import secrets
 import sqlite3
 import threading
 import time
+from collections import deque, defaultdict
 import uuid
 import zipfile
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Deque, Iterable, List, Optional, Tuple
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -110,7 +111,10 @@ CSRF_SAFE_PATHS = {
 }
 CSRF_SAFE_PREFIXES = set()
 CSRF_DEV_PATHS = {"/__test__/reset", "/__test__/emails/flush"}
-MAX_CSP_REPORT_BYTES = 10 * 1024
+MAX_CSP_REPORT_BYTES = 64 * 1024
+CSP_REPORT_RATE_LIMIT = 30
+CSP_REPORT_WINDOW = 60
+_csp_rate_limits: Dict[str, Deque[float]] = defaultdict(deque)
 AUTH_STATE_PATHS = {
     "/auth/login",
     "/auth/register",
@@ -1808,20 +1812,70 @@ if ANNAFINDER_ENV == "test":
 
 @app.post("/__csp_report")
 async def csp_report(request: Request) -> Response:
-    body = await request.body()
-    if len(body) > MAX_CSP_REPORT_BYTES:
-        return Response(status_code=413)
+    client_ip = request.client.host if request.client else "unknown"
+    if not _allow_csp_report(client_ip):
+        return _csp_error(429, "Too many CSP reports from this client")
+
+    content_type = request.headers.get("content-type", "")
+    media_type = content_type.split(";", 1)[0].strip().lower()
+    if media_type != "application/reports+json":
+        return _csp_error(415, "CSP reports must use application/reports+json")
+
+    content_length = request.headers.get("content-length")
+    if content_length:
+        try:
+            length = int(content_length)
+        except ValueError:
+            return _csp_error(400, "Invalid Content-Length")
+        if length > MAX_CSP_REPORT_BYTES:
+            return _csp_error(413, "CSP report payload too large")
+
+    ok, size = await _consume_csp_body(request)
+    if not ok:
+        return _csp_error(413, "CSP report payload too large")
+
     logger.info(
         json.dumps(
             {
                 "event": "CSP_REPORT",
-                "size": len(body),
-                "env": ANNAFINDER_ENV,
-                "path": request.url.path,
+                "size": size,
+                "content_type": media_type,
+                "ip": client_ip,
+                "outcome": "accepted",
             }
         )
     )
     return Response(status_code=204)
+
+
+def _csp_error(status: int, message: str) -> JSONResponse:
+    payload = make_error_payload(ERROR_CODES["http"], message, {"status_code": status})
+    payload_with_detail = {**payload, "detail": payload["error"]["message"]}
+    return JSONResponse(status_code=status, content=payload_with_detail)
+
+
+def _allow_csp_report(client_ip: str) -> bool:
+    now = monotonic()
+    queue = _csp_rate_limits[client_ip]
+    while queue and queue[0] <= now - CSP_REPORT_WINDOW:
+        queue.popleft()
+    if len(queue) >= CSP_REPORT_RATE_LIMIT:
+        return False
+    queue.append(now)
+    return True
+
+
+async def _consume_csp_body(request: Request) -> Tuple[bool, int]:
+    total = 0
+    async for chunk in request.stream():
+        total += len(chunk)
+        if total > MAX_CSP_REPORT_BYTES:
+            return False, total
+    return True, total
+
+
+def _reset_csp_rate_limits() -> None:
+    _csp_rate_limits.clear()
 
 
 @app.post("/auth/register")

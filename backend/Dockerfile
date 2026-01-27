@@ -7,7 +7,7 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . ./
-RUN ln -s /app /app/backend || true
+RUN ln -s /app /backend
 RUN chmod +x entrypoint.sh
 
 EXPOSE 8000

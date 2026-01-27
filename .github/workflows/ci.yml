@@ -110,7 +110,7 @@ jobs:
       - name: Wait for frontend
         run: |
           for i in {1..30}; do
-            curl -fsS http://127.0.0.1:3000/ && break
+            curl -fsSL http://127.0.0.1:3000/en/ && break
             sleep 2
           done
       - name: Install frontend deps
@@ -128,4 +128,3 @@ jobs:
       - name: Tear down stack
         if: always()
         run: docker compose down --volumes
-

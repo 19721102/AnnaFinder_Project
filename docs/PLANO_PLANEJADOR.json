@@ -423,6 +423,12 @@
       "title": "CSP reporting compatibility + reporting API content-types",
       "module": "infra"
     }
+    ,
+    {
+      "id": "T-025",
+      "title": "Stabilize Playwright E2E header assertions (CSP Report-Only) across local/CI",
+      "module": "tests"
+    }
   ],
   "milestones": [
     {

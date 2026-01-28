@@ -11,8 +11,15 @@ const cspDirectives = [
   "style-src 'self' 'unsafe-inline'",
   "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
   `connect-src 'self' ${backendBaseUrl} ws://127.0.0.1:3000 wss://127.0.0.1:3000`,
+  "report-to csp-endpoint",
   "report-uri /api/v1/csp-report",
 ];
+const reportingEndpointsValue = 'csp-endpoint="/api/v1/csp-report"';
+const reportToValue = JSON.stringify({
+  group: "csp-endpoint",
+  max_age: 10886400,
+  endpoints: [{ url: "/api/v1/csp-report" }],
+});
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -25,6 +32,14 @@ const cspHeaders = [
   {
     key: "Content-Security-Policy-Report-Only",
     value: cspDirectives.join("; "),
+  },
+  {
+    key: "Reporting-Endpoints",
+    value: reportingEndpointsValue,
+  },
+  {
+    key: "Report-To",
+    value: reportToValue,
   },
 ];
 

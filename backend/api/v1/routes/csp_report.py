@@ -23,7 +23,12 @@ ALLOWED_KEYS = {
     "line-number",
     "column-number",
 }
-ALLOWED_CONTENT_TYPES = {"application/json", "application/csp-report", "text/plain"}
+ALLOWED_CONTENT_TYPES = {
+    "application/json",
+    "application/csp-report",
+    "application/reports+json",
+    "text/plain",
+}
 MAX_BYTES = 64 * 1024
 MAX_LENGTH = 512
 PREVIEW_CHARS = 200
@@ -67,6 +72,14 @@ def _truncate(text: str, limit: int) -> str:
     return text[:limit]
 
 
+def _iter_reports(payload: Any) -> list[dict[str, Any]]:
+    if isinstance(payload, list):
+        return [item for item in payload if isinstance(item, dict)]
+    if isinstance(payload, dict):
+        return [payload]
+    return []
+
+
 @router.post("/csp-report", status_code=204)
 async def csp_report(request: Request) -> Response:
     content_type = _normalize_content_type(request.headers.get("content-type"))
@@ -87,6 +100,53 @@ async def csp_report(request: Request) -> Response:
         return Response(status_code=413)
 
     request_id = get_request_id(request)
+    if content_type == "application/reports+json":
+        try:
+            payload = json.loads(body.decode("utf-8", errors="strict"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            log_structured(
+                logging.WARNING,
+                "csp_report",
+                payload={},
+                path=request.url.path,
+                content_type=content_type,
+                parse_error=_truncate(str(exc), MAX_LENGTH),
+                request_id=request_id,
+            )
+            return Response(status_code=204)
+
+        reports = _iter_reports(payload)
+        csp_logged = 0
+        for report in reports:
+            if report.get("type") != "csp-violation":
+                continue
+            body_payload = report.get("body")
+            if not isinstance(body_payload, dict):
+                continue
+            sanitized = _sanitize_payload(body_payload)
+            log_structured(
+                logging.WARNING,
+                "csp_report",
+                payload=sanitized,
+                path=request.url.path,
+                content_type=content_type,
+                report_type="csp-violation",
+                request_id=request_id,
+            )
+            csp_logged += 1
+
+        if csp_logged == 0:
+            log_structured(
+                logging.WARNING,
+                "csp_report",
+                payload={},
+                path=request.url.path,
+                content_type=content_type,
+                report_count=len(reports),
+                request_id=request_id,
+            )
+        return Response(status_code=204)
+
     if content_type in {"application/json", "application/csp-report"}:
         try:
             payload = json.loads(body.decode("utf-8", errors="strict"))

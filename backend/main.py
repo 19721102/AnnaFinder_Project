@@ -53,16 +53,27 @@ from security_events import build_actor, emit_event, safe_hash, sanitize_str
 from backend.security.jwt import decode_token
 from backend.api.v1.router import api_v1_router
 from backend.exception_handlers import register_exception_handlers
+from backend.observability import (
+    StructuredFormatter,
+    get_request_id,
+    log_structured,
+    reset_active_request_id,
+    set_active_request_id,
+)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    log_structured(logging.INFO, "startup", message="AnnaFinder backend initializing", env=ANNAFINDER_ENV)
     validate_email_settings()
     init_db()
     if APP_ENV == "dev" and SEED_ON_STARTUP:
         logger.info("SEED_ON_STARTUP enabled; seeding demo data")
         seed_if_empty()
-    yield
+    try:
+        yield
+    finally:
+        log_structured(logging.INFO, "shutdown", message="AnnaFinder backend closing", env=ANNAFINDER_ENV)
 
 
 app = FastAPI(
@@ -109,6 +120,7 @@ CSRF_SAFE_PATHS = {
     "/api/v1/auth/login",
     "/api/v1/auth/refresh",
     "/__csp_report",
+    "/api/v1/error-report",
 }
 CSRF_SAFE_PREFIXES = set()
 CSRF_DEV_PATHS = {"/__test__/reset", "/__test__/emails/flush"}
@@ -122,6 +134,7 @@ AUTH_STATE_PATHS = {
     "/auth/password/reset/request",
     "/auth/password/reset/confirm",
     "/auth/verify-email/resend",
+    "/api/v1/error-report",
 }
 
 DEFAULT_ALLOWED_ORIGINS = [
@@ -225,6 +238,7 @@ app.add_middleware(
 logger = logging.getLogger("annafinder")
 if not logger.handlers:
     handler = logging.StreamHandler()
+    handler.setFormatter(StructuredFormatter())
     logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
@@ -1604,11 +1618,6 @@ def require_session(request: Request) -> Dict[str, Any]:
     return session
 
 
-def get_request_id(request: Request) -> str:
-    rid = getattr(request.state, "request_id", "") or request.headers.get("X-Request-Id", "")
-    return sanitize_str(rid, 64)
-
-
 def build_security_context(
     request: Request, session: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
@@ -1717,15 +1726,18 @@ async def csrf_protect(request: Request, call_next):
 @app.middleware("http")
 async def request_logger(request: Request, call_next):
     request_id = request.headers.get("X-Request-Id") or str(uuid.uuid4())
+    token = set_active_request_id(request_id)
     request.state.request_id = request_id
     start = time.perf_counter()
     status_code = 500
-    error_type = None
-    error_message = None
+    error_type: Optional[str] = None
+    error_message: Optional[str] = None
+    response = None
 
     try:
         response = await call_next(request)
         status_code = response.status_code
+        return response
     except Exception as exc:
         error_type = type(exc).__name__
         error_message = str(exc)[:200] if ANNAFINDER_ENV != "prod" else None
@@ -1733,8 +1745,12 @@ async def request_logger(request: Request, call_next):
     finally:
         duration_ms = (time.perf_counter() - start) * 1000.0
         client_ip = request.client.host if request.client else None
-        log_entry = {
-            "timestamp": iso_utc(now_utc()),
+        level = logging.INFO
+        if status_code >= 500:
+            level = logging.ERROR
+        elif status_code >= 400:
+            level = logging.WARNING
+        fields = {
             "request_id": request_id,
             "method": request.method,
             "path": request.url.path,
@@ -1742,12 +1758,16 @@ async def request_logger(request: Request, call_next):
             "duration_ms": round(duration_ms, 2),
             "client_ip": client_ip,
             "env": ANNAFINDER_ENV,
+            "message": "request complete",
         }
         if error_type:
-            log_entry["error_type"] = error_type
+            fields["error_type"] = error_type
             if error_message:
-                log_entry["error_message"] = error_message
-        logger.info(json.dumps(log_entry, ensure_ascii=True))
+                fields["error_message"] = error_message
+        log_structured(level, "request", **fields)
+        if response is not None:
+            response.headers["X-Request-Id"] = request_id
+        reset_active_request_id(token)
 
         with _metrics_lock:
             _metrics["requests_total"] += 1

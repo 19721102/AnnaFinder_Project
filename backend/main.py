@@ -139,6 +139,7 @@ CSRF_SAFE_PATHS = {
     "/api/v1/auth/refresh",
     "/__csp_report",
     "/api/v1/error-report",
+    "/api/v1/csp-report",
 }
 CSRF_SAFE_PREFIXES = set()
 CSRF_DEV_PATHS = {"/__test__/reset", "/__test__/emails/flush"}
@@ -153,6 +154,7 @@ AUTH_STATE_PATHS = {
     "/auth/password/reset/confirm",
     "/auth/verify-email/resend",
     "/api/v1/error-report",
+    "/api/v1/csp-report",
 }
 
 DEFAULT_ALLOWED_ORIGINS = [

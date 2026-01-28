@@ -26,8 +26,7 @@ if (isPlaywright) {
     );
     const cspHeader = cspHeaderEntry?.value;
     if (cspHeader) {
-      expect(cspHeader).toContain('report-to csp-endpoint');
-      expect(cspHeader).toContain('report-uri /__csp_report');
+      expect(cspHeader).toContain('report-uri /api/v1/csp-report');
     } else {
       await test.info().attach('csp-header-debug', {
         body: JSON.stringify(

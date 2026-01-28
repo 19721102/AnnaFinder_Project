@@ -11,6 +11,7 @@ from backend.api.v1.routes import (
     locations as locations_routes,
     meta as meta_routes,
     observability as observability_routes,
+    csp_report as csp_report_routes,
     tags as tags_routes,
 )
 
@@ -27,3 +28,4 @@ api_v1_router.include_router(item_tag_routes.router, tags=["item-tags"])
 api_v1_router.include_router(events_routes.router, tags=["events"])
 api_v1_router.include_router(audit_routes.router, tags=["audit"])
 api_v1_router.include_router(observability_routes.router, tags=["observability"])
+api_v1_router.include_router(csp_report_routes.router, tags=["observability"])

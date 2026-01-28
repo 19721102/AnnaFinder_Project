@@ -1,19 +1,17 @@
 /** @type {import('next').NextConfig} */
 const backendBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
-const allowUnsafeEval = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
 const cspDirectives = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${allowUnsafeEval}`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' blob: data:",
-  `connect-src 'self' ${backendBaseUrl} ws://127.0.0.1:3000 wss://127.0.0.1:3000`,
-  "object-src 'none'",
   "base-uri 'self'",
+  "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  "report-to csp-endpoint",
-  `report-uri ${backendBaseUrl}/__csp_report`,
-  "report-uri /__csp_report",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  "style-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+  `connect-src 'self' ${backendBaseUrl} ws://127.0.0.1:3000 wss://127.0.0.1:3000`,
+  "report-uri /api/v1/csp-report",
 ];
 
 const securityHeaders = [
@@ -27,10 +25,6 @@ const cspHeaders = [
   {
     key: "Content-Security-Policy-Report-Only",
     value: cspDirectives.join("; "),
-  },
-  {
-    key: "Reporting-Endpoints",
-    value: `csp-endpoint="${backendBaseUrl}/__csp_report"`,
   },
 ];
 
@@ -52,6 +46,14 @@ const nextConfig = {
       {
         source: "/(.*)",
         headers,
+      },
+    ];
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/v1/:path*",
+        destination: `${backendBaseUrl}/api/v1/:path*`,
       },
     ];
   },

@@ -60,6 +60,7 @@ from backend.observability import (
     reset_active_request_id,
     set_active_request_id,
 )
+from backend.security_headers import SecurityHeadersMiddleware
 
 
 @asynccontextmanager
@@ -74,6 +75,19 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         log_structured(logging.INFO, "shutdown", message="AnnaFinder backend closing", env=ANNAFINDER_ENV)
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ANNAFINDER_ENV = os.getenv("ANNAFINDER_ENV", "dev").strip().lower()
+APP_ENV = os.getenv("APP_ENV", ANNAFINDER_ENV).strip().lower()
+SERVICE_VERSION = os.getenv("APP_VERSION") or "dev"
+SEED_ON_STARTUP = os.getenv("SEED_ON_STARTUP", "0").strip() == "1"
+TEST_DB_PATH = os.path.join(BASE_DIR, "annafinder_test.db")
+DB_PATH = TEST_DB_PATH if ANNAFINDER_ENV == "test" else os.path.join(BASE_DIR, "annafinder.db")
+APP_VERSION = "0.1.0"
+START_TIME = time.monotonic()
+BASE_URL = os.getenv("ANNAFINDER_BASE_URL", "http://localhost:3000").strip().rstrip("/")
+METRICS_TOKEN = os.getenv("METRICS_TOKEN", "").strip()
 
 
 app = FastAPI(
@@ -94,17 +108,8 @@ app = FastAPI(
     ],
 )
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ANNAFINDER_ENV = os.getenv("ANNAFINDER_ENV", "dev").strip().lower()
-APP_ENV = os.getenv("APP_ENV", ANNAFINDER_ENV).strip().lower()
-SERVICE_VERSION = os.getenv("APP_VERSION") or "dev"
-SEED_ON_STARTUP = os.getenv("SEED_ON_STARTUP", "0").strip() == "1"
-TEST_DB_PATH = os.path.join(BASE_DIR, "annafinder_test.db")
-DB_PATH = TEST_DB_PATH if ANNAFINDER_ENV == "test" else os.path.join(BASE_DIR, "annafinder.db")
-APP_VERSION = "0.1.0"
-START_TIME = time.monotonic()
-BASE_URL = os.getenv("ANNAFINDER_BASE_URL", "http://localhost:3000").strip().rstrip("/")
-METRICS_TOKEN = os.getenv("METRICS_TOKEN", "").strip()
+app.add_middleware(SecurityHeadersMiddleware, app_env=APP_ENV)
+app.state.app_env = APP_ENV
 
 SESSION_COOKIE_BASE_NAME = "anna_session"
 MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}

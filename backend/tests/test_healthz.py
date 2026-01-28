@@ -22,7 +22,8 @@ def test_healthz_includes_security_headers() -> None:
     with TestClient(app) as client:
         response = client.get("/healthz")
     assert response.headers.get("x-content-type-options") == "nosniff"
-    assert response.headers.get("referrer-policy") == "no-referrer"
+    assert response.headers.get("referrer-policy") == "strict-origin-when-cross-origin"
+    assert response.headers.get("x-frame-options") == "SAMEORIGIN"
     assert (
         response.headers.get("permissions-policy") == "geolocation=(), microphone=(), camera=()"
     )

@@ -15,6 +15,11 @@ if (isPlaywright) {
     await page.waitForSelector('body');
 
     const headerResponse = await request.get(`${normalizedFrontendUrl}${localizedPath}`);
+    const headerValues = headerResponse.headers();
+    expect(headerValues["x-content-type-options"]).toBe("nosniff");
+    expect(headerValues["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+    expect(headerValues["x-frame-options"]).toBe("SAMEORIGIN");
+    expect(headerValues["permissions-policy"]).toBe("geolocation=(), microphone=(), camera=()");
     const cspHeaderArray = headerResponse.headersArray();
     const cspHeaderEntry = cspHeaderArray.find(
       (header) => header.name.toLowerCase() === 'content-security-policy-report-only',

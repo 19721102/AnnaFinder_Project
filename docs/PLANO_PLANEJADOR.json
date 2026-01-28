@@ -441,6 +441,54 @@
       "title": "CI compose smoke gate",
       "module": "infra"
     }
+    ,
+    {
+      "id": "T-028",
+      "title": "Deployment baseline (dev/prod env docs + minimal hosting plan)",
+      "module": "infra",
+      "depends_on": [
+        "T-027"
+      ],
+      "acceptance_criteria": [
+        "Document environment variables + secrets required for dev and prod deployments with example values or placeholders.",
+        "Provide a minimal runbook describing how to provision the stack (host, DB, storage) and deploy the latest main branch.",
+        "Commit a simple infrastructure manifest (e.g., docker-compose override or cloud template) that can stand up the backend/frontend in a dev-like environment.",
+        "Outline rollback steps and automated health checks to verify the deployment succeeds."
+      ],
+      "executor_prompt": "Você está no repo AnnaFinder. Escopo: consolidar T-028 adicionando docs/env specs e um plano mínimo para deploy de dev/prod sem disparar novos serviços. Regras: não crie novos branches, mantenha arquivos existentes apenas em docs ou infra, e registre um commit único naz \"docs(T-028): deployment baseline\"."
+    }
+    ,
+    {
+      "id": "T-029",
+      "title": "Observability baseline (request-id logs + error reporting skeleton)",
+      "module": "backend",
+      "depends_on": [
+        "T-027"
+      ],
+      "acceptance_criteria": [
+        "Inject a consistent request-id header into backend log lines and propagate it through async tasks or HTTP requests.",
+        "Add structured log entries for startup/shutdown and request handling with level and timestamp metadata.",
+        "Wire a stub error-reporting endpoint that safely captures exceptions and prints a traceable payload.",
+        "Update README or docs with instructions to read logs by request-id and trigger the new error report."
+      ],
+      "executor_prompt": "Você está no repo AnnaFinder. Escopo: entregar observability mínimo cobrindo request-id logging e um ponto de coleta de erros sem instrumentar provedores externos. Regras: não altere frontend assets, mantenha mudanças no backend e docs, e use commit \"docs(T-029): observability baseline\"."
+    }
+    ,
+    {
+      "id": "T-030",
+      "title": "API contract polish (OpenAPI tags, healthz schema, docs update)",
+      "module": "backend",
+      "depends_on": [
+        "T-029"
+      ],
+      "acceptance_criteria": [
+        "Group routes under OpenAPI tags and ensure /healthz response schema includes status and version fields.",
+        "Add descriptive summaries + response codes for the main endpoints in the OpenAPI document.",
+        "Update docs/README to highlight the contract changes and how to inspect the generated OpenAPI spec.",
+        "Include a simple script or command to regenerate the OpenAPI file after schema changes."
+      ],
+      "executor_prompt": "Você está no repo AnnaFinder. Escopo: polir o contrato da API com tags, schemas e docs sem alterar autenticação. Regras: mantenha foco na OpenAPI e healthz; não mexa em migration ou frontend; use commit \"docs(T-030): api contract polish\"."
+    }
   ],
   "milestones": [
     {

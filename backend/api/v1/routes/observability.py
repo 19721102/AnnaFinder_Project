@@ -17,7 +17,15 @@ class ErrorReportPayload(BaseModel):
     stack: Optional[str] = None
 
 
-@router.post("/error-report", status_code=202)
+@router.post(
+    "/error-report",
+    status_code=202,
+    summary="Accept operational error reports",
+    responses={
+        202: {"description": "Error report accepted for human review"},
+        400: {"description": "Invalid payload or missing required fields"},
+    },
+)
 def report_error(payload: ErrorReportPayload, request: Request) -> Dict[str, str]:
     data = sanitize_payload(payload.model_dump(exclude_none=True))
     log_structured(

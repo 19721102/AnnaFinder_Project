@@ -39,3 +39,9 @@ The GitHub Actions workflow (`.github/workflows/ci.yml`) runs all backend and fr
 * `NEXT_PUBLIC_API_BASE_URL` — Base URL the frontend calls (e.g., `http://localhost:8000`).
 
 When adding new environment variables, document them here or in `.env.example` without committing real secrets.
+
+## Deployment baseline
+`docs/DEPLOYMENT_BASELINE.md` e `docs/ENVIRONMENT_VARIABLES.md` reúnem o runbook, as variáveis necessárias (dev vs. prod), health checks e rollback seguros para publicar a `main` em um host Docker conforme T-028.
+
+## API contract
+`docs/API_CONTRACT.md` resume os tags do OpenAPI, descreve como inspecionar `/openapi.json`, e mostra o script `python backend/scripts/export_openapi.py --out docs/openapi.json` que regenera o contrato.

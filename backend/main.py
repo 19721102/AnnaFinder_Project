@@ -80,11 +80,24 @@ app = FastAPI(
     title="AnnaFinder Backend",
     version="1.0.1",
     lifespan=lifespan,
+    openapi_tags=[
+        {"name": "meta", "description": "Metadata and discovery endpoints"},
+        {"name": "auth", "description": "Authentication and session control"},
+        {"name": "audit", "description": "Audit and observability endpoints"},
+        {"name": "events", "description": "Event and timeline management"},
+        {"name": "families", "description": "Family management flows"},
+        {"name": "items", "description": "Item management and tagging"},
+        {"name": "locations", "description": "Location planning and CRUD"},
+        {"name": "observability", "description": "Logging and error reporting helpers"},
+        {"name": "tags", "description": "Tag management for families/items"},
+        {"name": "item-tags", "description": "Item-tag linking operations"},
+    ],
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ANNAFINDER_ENV = os.getenv("ANNAFINDER_ENV", "dev").strip().lower()
 APP_ENV = os.getenv("APP_ENV", ANNAFINDER_ENV).strip().lower()
+SERVICE_VERSION = os.getenv("APP_VERSION") or "dev"
 SEED_ON_STARTUP = os.getenv("SEED_ON_STARTUP", "0").strip() == "1"
 TEST_DB_PATH = os.path.join(BASE_DIR, "annafinder_test.db")
 DB_PATH = TEST_DB_PATH if ANNAFINDER_ENV == "test" else os.path.join(BASE_DIR, "annafinder.db")
@@ -244,6 +257,27 @@ logger.setLevel(logging.INFO)
 
 register_exception_handlers(app)
 app.include_router(api_v1_router, prefix="/api/v1", tags=["v1"])
+
+_original_openapi = app.openapi
+
+def _custom_openapi() -> dict[str, Any]:
+    if app.openapi_schema:
+        return app.openapi_schema
+    schema = _original_openapi()
+    openapi_path = schema.get("paths", {}).get("/openapi.json", {}).get("get")
+    if openapi_path is not None:
+        openapi_path.setdefault("summary", "OpenAPI contract")
+        openapi_path.setdefault(
+            "description",
+            "JSON manifest that describes every route, schema, and tag for the AnnaFinder API.",
+        )
+        responses = openapi_path.setdefault("responses", {})
+        responses.setdefault("200", {"description": "OpenAPI schema document"})
+    schema.setdefault("tags", [])
+    app.openapi_schema = schema
+    return schema
+
+app.openapi = _custom_openapi
 
 _metrics_lock = threading.Lock()
 _metrics = {
@@ -2955,9 +2989,23 @@ def health() -> Dict[str, Any]:
     }
 
 
-@app.get("/healthz")
-def healthz() -> Dict[str, Any]:
-    return {"status": "ok", "timestamp": iso_utc(now_utc())}
+class HealthzResponse(BaseModel):
+    status: str
+    version: str
+
+
+@app.get(
+    "/healthz",
+    response_model=HealthzResponse,
+    summary="Service health check",
+    description="Returns the current health and service version.",
+    responses={
+        200: {"description": "Service is healthy"},
+        503: {"description": "Service is unhealthy (not implemented)"},
+    },
+)
+def healthz() -> HealthzResponse:
+    return HealthzResponse(status="ok", version=SERVICE_VERSION)
 
 
 @app.get("/metrics", response_class=PlainTextResponse)

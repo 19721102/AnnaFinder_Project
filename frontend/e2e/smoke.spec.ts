@@ -44,6 +44,7 @@ if (isPlaywright) {
     if (hasBackend) {
       const reportResponse = await request.post(`${backendBaseUrl}/__csp_report`, {
         data: { timestamp: Date.now() },
+        headers: { "content-type": "application/csp-report" },
       });
       expect(reportResponse.status()).toBe(204);
 

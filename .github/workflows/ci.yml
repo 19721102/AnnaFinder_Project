@@ -124,6 +124,9 @@ jobs:
           else
             docker compose up --build -d
           fi
+      - name: Clear frontend node_modules
+        run: |
+          sudo rm -rf frontend/node_modules
       - name: Wait for backend
         run: |
           for i in {1..30}; do

@@ -87,21 +87,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-      - name: Start stack
-        run: |
-          set -euo pipefail
-          if docker compose up --help | grep -q -- '--wait'; then
-            docker compose up --build -d --wait --wait-timeout 180
-          else
-            docker compose up --build -d
-          fi
-      - name: Check backend
-        run: curl -fsS http://127.0.0.1:8000/healthz
-      - name: Check frontend
-        run: curl -fsS http://127.0.0.1:3000/en/
-      - name: Tear down stack
-        if: always()
-        run: docker compose down --volumes
+      - name: Compose gate (/healthz + /en/)
+        run: pwsh -NoProfile -File infra/ci/t026_compose_gate.ps1 -WaitTimeout 180
 
   e2e_playwright:
     name: Playwright E2E smoke

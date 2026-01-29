@@ -36,6 +36,12 @@
   docker compose -f compose.yaml -f infra/compose.prod.yaml ps --filter health=healthy
   ```
 
+## Wait helper (CI/local)
+Use `infra/wait_http.py` to wait for endpoints without fixed sleeps:
+```bash
+python infra/wait_http.py http://127.0.0.1:8000/healthz http://127.0.0.1:3000/en/
+```
+
 ## Checklist de segurança
 - Armazene JWT_SECRET, DATABASE_URL e POSTGRES_PASSWORD fora do repo em um gestor de segredos ou variáveis de ambiente do host.
 - Monte `.env` via `env_file` ou `environment` para evitar expor segredos em históricos de comandos.

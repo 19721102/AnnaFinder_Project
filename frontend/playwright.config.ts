@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 const frontendBaseUrl = process.env.FRONTEND_BASE_URL ?? 'http://127.0.0.1:3000';
 const reuseServer = !process.env.CI;
 const shouldStartWebServer = !process.env.FRONTEND_BASE_URL && !process.env.CI;
+const frontendWaitUrl = `${frontendBaseUrl.replace(/\/$/, '')}/en/`;
 
 const config = {
   testDir: './e2e',
@@ -29,9 +30,9 @@ const config = {
 if (shouldStartWebServer) {
   (config as Parameters<typeof defineConfig>[0]).webServer = {
     command: 'npm run dev',
-    url: frontendBaseUrl,
+    url: frontendWaitUrl,
     reuseExistingServer: reuseServer,
-    timeout: 120_000,
+    timeout: 180_000,
   };
 }
 

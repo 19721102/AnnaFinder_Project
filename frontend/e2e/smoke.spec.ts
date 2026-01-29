@@ -5,6 +5,11 @@ const hasBackend = Boolean(process.env.CI || process.env.BACKEND_BASE_URL);
 
 if (isPlaywright) {
   const { test, expect } = require('@playwright/test');
+  const {
+    parseCspDirectives,
+    directiveIncludes,
+    getDirectiveValues,
+  } = require('../tests/utils/csp');
 
   test('smoke: frontend home and backend health', async ({ page, request }) => {
     const normalizedFrontendUrl = frontendBaseUrl.replace(/\/$/, '');
@@ -20,13 +25,14 @@ if (isPlaywright) {
     expect(headerValues["referrer-policy"]).toBe("strict-origin-when-cross-origin");
     expect(headerValues["x-frame-options"]).toBe("SAMEORIGIN");
     expect(headerValues["permissions-policy"]).toBe("geolocation=(), microphone=(), camera=()");
-    const cspHeaderArray = headerResponse.headersArray();
-    const cspHeaderEntry = cspHeaderArray.find(
-      (header) => header.name.toLowerCase() === 'content-security-policy-report-only',
-    );
-    const cspHeader = cspHeaderEntry?.value;
+    const cspHeader = headerValues['content-security-policy-report-only'];
     if (cspHeader) {
-      expect(cspHeader).toContain('report-uri /api/v1/csp-report');
+      const directives = parseCspDirectives(cspHeader);
+      expect(directiveIncludes(directives, 'report-uri', '/api/v1/csp-report')).toBe(true);
+      const reportToValues = getDirectiveValues(directives, 'report-to');
+      if (reportToValues) {
+        expect(reportToValues.length).toBeGreaterThan(0);
+      }
     } else {
       await test.info().attach('csp-header-debug', {
         body: JSON.stringify(
@@ -43,6 +49,14 @@ if (isPlaywright) {
       throw new Error(
         'Expected Content-Security-Policy-Report-Only header to be set on the frontend root response.',
       );
+    }
+    const reportingEndpoints = headerValues['reporting-endpoints'];
+    if (reportingEndpoints) {
+      expect(reportingEndpoints).toContain('/api/v1/csp-report');
+    }
+    const reportToHeader = headerValues['report-to'];
+    if (reportToHeader) {
+      expect(reportToHeader).toContain('/api/v1/csp-report');
     }
 
     if (hasBackend) {

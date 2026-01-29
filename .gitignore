@@ -20,3 +20,4 @@ backend/bandit.json
 # Build/test artifacts
 artifacts/
 node_modules/
+frontend/.next/

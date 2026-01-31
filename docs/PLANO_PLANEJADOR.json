@@ -169,7 +169,11 @@
         "coverage_min": "80%",
         "latency_p95_ms": 250
       },
-      "executor_prompt": "Você está no repo AnnaFinder. Objetivo: implementar T-004 (API v1 scaffolding + error model + pydantic schemas base) sem iniciar T-005.\n\nEscopo:\n1) Criar/ajustar roteamento /api/v1 (FastAPI routers) mantendo /healthz intacto.\n2) Definir um modelo de erro consistente (ex.: {\"error\": {\"code\": \"...\", \"message\": \"...\", \"details\": {...}}}) e handlers para HTTPException/ValidationError.\n3) Criar schemas Pydantic para User/Family/FamilyMember/Location/Item/Tag/Event/Attachment/AuditLog (MVP: campos essenciais + UUID + timestamps).\n4) Adicionar testes: \n - /healthz continua 200\n - um endpoint simples /api/v1/meta ou /api/v1/version retorna 200\n - handler de validação retorna o formato padronizado em 422\n\nRegras:\n- Não criar auth ainda.\n- Não mexer em models/migrations além do necessário para schemas.\n- Rodar: cd backend && pytest -q; ruff check .; pip-audit -r requirements.txt; bandit -r . -ll\n- Commit único: feat(T-004): api v1 scaffolding and error model\n\nSaída:\n- arquivos alterados\n- resultados dos comandos\n- hash do commit"
+      "executor_prompt": "Você está no repo AnnaFinder. Objetivo: implementar T-004 (API v1 scaffolding + error model + pydantic schemas base) sem iniciar T-005.\n\nEscopo:\n1) Criar/ajustar roteamento /api/v1 (FastAPI routers) mantendo /healthz intacto.\n2) Definir um modelo de erro consistente (ex.: {\"error\": {\"code\": \"...\", \"message\": \"...\", \"details\": {...}}}) e handlers para HTTPException/ValidationError.\n3) Criar schemas Pydantic para User/Family/FamilyMember/Location/Item/Tag/Event/Attachment/AuditLog (MVP: campos essenciais + UUID + timestamps).\n4) Adicionar testes: \n - /healthz continua 200\n - um endpoint simples /api/v1/meta ou /api/v1/version retorna 200\n - handler de validação retorna o formato padronizado em 422\n\nRegras:\n- Não criar auth ainda.\n- Não mexer em models/migrations além do necessário para schemas.\n- Rodar: cd backend && pytest -q; ruff check .; pip-audit -r requirements.txt; bandit -r . -ll\n- Commit único: feat(T-004): api v1 scaffolding and error model\n\nSaída:\n- arquivos alterados\n- resultados dos comandos\n- hash do commit",
+      "done": true,
+      "done_commit": "f8bf8ef",
+      "done_subject": "feat(T-004): api v1 scaffolding and error model",
+      "done_date": "2026-01-20"
     },
     {
       "id": "T-005",
@@ -189,7 +193,11 @@
         "coverage_min": "80%",
         "latency_p95_ms": 250
       },
-      "executor_prompt": "Implementar T-005 no backend AnnaFinder.\n\nEscopo:\n- Adicionar hashing de senha (biblioteca padrão segura) e utilitários.\n- Implementar JWT access + refresh (claims mínimos: sub=user_id, exp, iat).\n- Endpoints: /api/v1/auth/register, /login, /refresh.\n- Atualizar .env.example com JWT_SECRET e tempos de expiração.\n- Testes pytest para register/login/refresh e falhas.\n\nRegras:\n- Não implementar RBAC ainda.\n- Não criar UI.\n- Rodar: pytest -q; ruff check .; pip-audit; bandit.\n- Commit único: feat(T-005): auth jwt with tests\n\nSaída:\n- arquivos alterados\n- comandos e resultados\n- hash do commit"
+      "executor_prompt": "Implementar T-005 no backend AnnaFinder.\n\nEscopo:\n- Adicionar hashing de senha (biblioteca padrão segura) e utilitários.\n- Implementar JWT access + refresh (claims mínimos: sub=user_id, exp, iat).\n- Endpoints: /api/v1/auth/register, /login, /refresh.\n- Atualizar .env.example com JWT_SECRET e tempos de expiração.\n- Testes pytest para register/login/refresh e falhas.\n\nRegras:\n- Não implementar RBAC ainda.\n- Não criar UI.\n- Rodar: pytest -q; ruff check .; pip-audit; bandit.\n- Commit único: feat(T-005): auth jwt with tests\n\nSaída:\n- arquivos alterados\n- comandos e resultados\n- hash do commit",
+      "done": true,
+      "done_commit": "fbfbf1a",
+      "done_subject": "feat(T-005): auth jwt with tests",
+      "done_date": "2026-01-20"
     },
     {
       "id": "T-006",
@@ -208,7 +216,11 @@
         "coverage_min": "82%",
         "latency_p95_ms": 250
       },
-      "executor_prompt": "Implementar T-006 (multi-tenant authz) no backend.\n\nEscopo:\n- Criar dependency get_current_user (usa JWT access).\n- Criar require_family_access(family_id) validando tabela family_members.\n- Padronizar como family_id é passado (recomendado: path /api/v1/families/{family_id}/...).\n- Adicionar testes: acesso permitido vs negado.\n\nRegras:\n- Não iniciar CRUD completo ainda; apenas wiring + 1 rota protegida de exemplo (ex.: GET /api/v1/families/{family_id}/me).\n- Rodar testes e scans.\n- Commit: feat(T-006): multi-tenant authorization gate\n\nSaída: lista de arquivos + resultados + hash"
+      "executor_prompt": "Implementar T-006 (multi-tenant authz) no backend.\n\nEscopo:\n- Criar dependency get_current_user (usa JWT access).\n- Criar require_family_access(family_id) validando tabela family_members.\n- Padronizar como family_id é passado (recomendado: path /api/v1/families/{family_id}/...).\n- Adicionar testes: acesso permitido vs negado.\n\nRegras:\n- Não iniciar CRUD completo ainda; apenas wiring + 1 rota protegida de exemplo (ex.: GET /api/v1/families/{family_id}/me).\n- Rodar testes e scans.\n- Commit: feat(T-006): multi-tenant authorization gate\n\nSaída: lista de arquivos + resultados + hash",
+      "done": true,
+      "done_commit": "3bf9fbb",
+      "done_subject": "feat(T-006): multi-tenant authorization gate",
+      "done_date": "2026-01-21"
     },
     {
       "id": "T-007",
@@ -227,7 +239,11 @@
         "coverage_min": "82%",
         "latency_p95_ms": 250
       },
-      "executor_prompt": "Implementar T-007 (Locations CRUD) no backend.\n\nEscopo:\n- Implementar router locations com authz multi-tenant.\n- Pydantic schemas request/response.\n- DB ops com SQLAlchemy session.\n- Paginação default (ex.: limit=50).\n- Testes pytest cobrindo CRUD e isolamento.\n\nRegras:\n- Não iniciar Items.\n- Rodar: pytest -q; ruff; pip-audit; bandit.\n- Commit: feat(T-007): locations crud with tenant isolation\n\nSaída: arquivos + comandos + hash"
+      "executor_prompt": "Implementar T-007 (Locations CRUD) no backend.\n\nEscopo:\n- Implementar router locations com authz multi-tenant.\n- Pydantic schemas request/response.\n- DB ops com SQLAlchemy session.\n- Paginação default (ex.: limit=50).\n- Testes pytest cobrindo CRUD e isolamento.\n\nRegras:\n- Não iniciar Items.\n- Rodar: pytest -q; ruff; pip-audit; bandit.\n- Commit: feat(T-007): locations crud with tenant isolation\n\nSaída: arquivos + comandos + hash",
+      "done": true,
+      "done_commit": "4b90b72",
+      "done_subject": "feat(T-007): locations crud with tenant isolation",
+      "done_date": "2026-01-21"
     },
     {
       "id": "T-008",
@@ -246,7 +262,11 @@
         "coverage_min": "83%",
         "latency_p95_ms": 300
       },
-      "executor_prompt": "Implementar T-008 (Items CRUD) no backend.\n\nEscopo:\n- Router items com authz.\n- Validar location_id pertence à família.\n- Filtros e paginação.\n- Testes cobrindo cenários negativos.\n\nRegras:\n- Não iniciar Tags/Eventos ainda.\n- Commit: feat(T-008): items crud with filters\n\nRodar: pytest/ruff/pip-audit/bandit.\nSaída: arquivos + resultados + hash"
+      "executor_prompt": "Implementar T-008 (Items CRUD) no backend.\n\nEscopo:\n- Router items com authz.\n- Validar location_id pertence à família.\n- Filtros e paginação.\n- Testes cobrindo cenários negativos.\n\nRegras:\n- Não iniciar Tags/Eventos ainda.\n- Commit: feat(T-008): items crud with filters\n\nRodar: pytest/ruff/pip-audit/bandit.\nSaída: arquivos + resultados + hash",
+      "done": true,
+      "done_commit": "e885114",
+      "done_subject": "feat(T-008): items crud with filters",
+      "done_date": "2026-01-21"
     },
     {
       "id": "T-009",
@@ -265,7 +285,11 @@
         "coverage_min": "83%",
         "latency_p95_ms": 300
       },
-      "executor_prompt": "Implementar T-009 (Tags + ItemTag links).\n\nEscopo:\n- Router tags e router item-tags.\n- Regras multi-tenant (tag e item devem pertencer à mesma família).\n- Garantir idempotência no vínculo.\n- Testes.\n\nCommit: feat(T-009): tags and item-tag links\nRodar: pytest/ruff/pip-audit/bandit.\nSaída: arquivos + resultados + hash"
+      "executor_prompt": "Implementar T-009 (Tags + ItemTag links).\n\nEscopo:\n- Router tags e router item-tags.\n- Regras multi-tenant (tag e item devem pertencer à mesma família).\n- Garantir idempotência no vínculo.\n- Testes.\n\nCommit: feat(T-009): tags and item-tag links\nRodar: pytest/ruff/pip-audit/bandit.\nSaída: arquivos + resultados + hash",
+      "done": true,
+      "done_commit": "a06ca84",
+      "done_subject": "feat(T-009): tags and item-tag links",
+      "done_date": "2026-01-21"
     },
     {
       "id": "T-010",
@@ -284,7 +308,11 @@
         "coverage_min": "84%",
         "latency_p95_ms": 350
       },
-      "executor_prompt": "Implementar T-010 (Events timeline).\n\nEscopo:\n- Adicionar camada mínima de event emission nas operações já existentes.\n- Implementar listagem de events com filtros e paginação.\n- Testes.\n\nCommit: feat(T-010): events timeline with filters\nRodar: pytest/ruff/pip-audit/bandit.\nSaída: arquivos + resultados + hash"
+      "executor_prompt": "Implementar T-010 (Events timeline).\n\nEscopo:\n- Adicionar camada mínima de event emission nas operações já existentes.\n- Implementar listagem de events com filtros e paginação.\n- Testes.\n\nCommit: feat(T-010): events timeline with filters\nRodar: pytest/ruff/pip-audit/bandit.\nSaída: arquivos + resultados + hash",
+      "done": true,
+      "done_commit": "c508b28",
+      "done_subject": "feat(T-010): events timeline with filters",
+      "done_date": "2026-01-21"
     },
     {
       "id": "T-011",
@@ -303,7 +331,11 @@
         "coverage_min": "84%",
         "latency_p95_ms": 400
       },
-      "executor_prompt": "Implementar T-011 (audit log + request context).\n\nEscopo:\n- Middleware para request_id + logging.\n- Função utilitária para gravar audit_log em ações sensíveis.\n- Teste mínimo garantindo criação de audit_log.\n\nCommit: feat(T-011): audit logging and request context\nRodar: pytest/ruff/pip-audit/bandit.\nSaída: arquivos + resultados + hash"
+      "executor_prompt": "Implementar T-011 (audit log + request context).\n\nEscopo:\n- Middleware para request_id + logging.\n- Função utilitária para gravar audit_log em ações sensíveis.\n- Teste mínimo garantindo criação de audit_log.\n\nCommit: feat(T-011): audit logging and request context\nRodar: pytest/ruff/pip-audit/bandit.\nSaída: arquivos + resultados + hash",
+      "done": true,
+      "done_commit": "496b50c",
+      "done_subject": "feat(T-011): audit log with family-scoped listing",
+      "done_date": "2026-01-21"
     },
     {
       "id": "T-012",
@@ -322,7 +354,11 @@
         "coverage_min": "N/A",
         "latency_p95_ms": 0
       },
-      "executor_prompt": "Implementar T-012 no frontend (Next.js): i18n com English-first (en-GB) e Português como secundário.\n\nEscopo:\n- Configurar i18n routing (Next built-in ou biblioteca dedicada), com defaultLocale en-GB e locale pt.\n- Criar arquivos de mensagens (ex.: messages/en-GB.json, messages/pt.json) e usar nas views.\n- Implementar toggle EN/PT no layout e persistir escolha.\n\nRegras:\n- Não implementar telas de negócio ainda.\n- Garantir que o app sobe em docker compose e responde 200 em :3000.\n- Commit: feat(T-012): english-first i18n with language toggle\n\nSaída: arquivos alterados + comando para validar (docker compose up + curl -I :3000) + hash"
+      "executor_prompt": "Implementar T-012 no frontend (Next.js): i18n com English-first (en-GB) e Português como secundário.\n\nEscopo:\n- Configurar i18n routing (Next built-in ou biblioteca dedicada), com defaultLocale en-GB e locale pt.\n- Criar arquivos de mensagens (ex.: messages/en-GB.json, messages/pt.json) e usar nas views.\n- Implementar toggle EN/PT no layout e persistir escolha.\n\nRegras:\n- Não implementar telas de negócio ainda.\n- Garantir que o app sobe em docker compose e responde 200 em :3000.\n- Commit: feat(T-012): english-first i18n with language toggle\n\nSaída: arquivos alterados + comando para validar (docker compose up + curl -I :3000) + hash",
+      "done": true,
+      "done_commit": "b8005ef",
+      "done_subject": "feat(T-012): frontend i18n with language switcher",
+      "done_date": "2026-01-21"
     },
     {
       "id": "T-013",
@@ -341,7 +377,11 @@
         "coverage_min": "N/A",
         "latency_p95_ms": 0
       },
-      "executor_prompt": "Implementar T-013 no frontend.\n\nEscopo:\n- Criar lib/apiClient.ts (ou equivalente) com base URL, headers, timeout e parse.\n- Criar página /status que chama backend /healthz e mostra resultado.\n- Integrar mensagens i18n para OK/FAIL.\n\nRegras:\n- Não implementar login ainda.\n- Validar via docker compose (backend+frontend) e conferir /status na UI.\n- Commit: feat(T-013): typed api client and status page\n\nSaída: arquivos + passos de verificação + hash"
+      "executor_prompt": "Implementar T-013 no frontend.\n\nEscopo:\n- Criar lib/apiClient.ts (ou equivalente) com base URL, headers, timeout e parse.\n- Criar página /status que chama backend /healthz e mostra resultado.\n- Integrar mensagens i18n para OK/FAIL.\n\nRegras:\n- Não implementar login ainda.\n- Validar via docker compose (backend+frontend) e conferir /status na UI.\n- Commit: feat(T-013): typed api client and status page\n\nSaída: arquivos + passos de verificação + hash",
+      "done": true,
+      "done_commit": "c9e012e",
+      "done_subject": "feat(T-013): families bootstrap create/list/detail",
+      "done_date": "2026-01-22"
     },
     {
       "id": "T-014",
@@ -361,7 +401,11 @@
         "coverage_min": "80%",
         "latency_p95_ms": 0
       },
-      "executor_prompt": "Implementar T-014: CI com GitHub Actions.\n\nEscopo:\n- Criar .github/workflows/ci.yml com jobs:\n - backend: setup python, install, ruff, pytest, pip-audit, bandit\n - frontend: setup node, npm ci, lint, build\n - planner-plan gate: verificar que docs/PLANO_PLANEJADOR.json existe\n- Cache de dependências quando possível.\n\nRegras:\n- Não mexer em código de negócio.\n- Commit: feat(T-014): add CI pipelines and plan gate\n\nSaída: arquivos + como o workflow roda + hash"
+      "executor_prompt": "Implementar T-014: CI com GitHub Actions.\n\nEscopo:\n- Criar .github/workflows/ci.yml com jobs:\n - backend: setup python, install, ruff, pytest, pip-audit, bandit\n - frontend: setup node, npm ci, lint, build\n - planner-plan gate: verificar que docs/PLANO_PLANEJADOR.json existe\n- Cache de dependências quando possível.\n\nRegras:\n- Não mexer em código de negócio.\n- Commit: feat(T-014): add CI pipelines and plan gate\n\nSaída: arquivos + como o workflow roda + hash",
+      "done": true,
+      "done_commit": "8d99252",
+      "done_subject": "merge: T-014 minimal CI gates",
+      "done_date": "2026-01-26"
     },
     {
       "id": "T-015",
@@ -380,68 +424,108 @@
         "coverage_min": "N/A",
         "latency_p95_ms": 0
       },
-      "executor_prompt": "Implementar T-015 (E2E básico com Playwright).\n\nEscopo:\n- Criar teste e2e que abre http://localhost:3000 e navega para /status.\n- Assert que status é OK (baseado em texto i18n ou data-testids).\n- Adicionar scripts npm no frontend para rodar e2e.\n\nRegras:\n- Sem mudanças grandes na UI.\n- Commit: feat(T-015): add basic e2e smoke tests\n\nSaída: arquivos + comandos para executar + hash"
+      "executor_prompt": "Implementar T-015 (E2E básico com Playwright).\n\nEscopo:\n- Criar teste e2e que abre http://localhost:3000 e navega para /status.\n- Assert que status é OK (baseado em texto i18n ou data-testids).\n- Adicionar scripts npm no frontend para rodar e2e.\n\nRegras:\n- Sem mudanças grandes na UI.\n- Commit: feat(T-015): add basic e2e smoke tests\n\nSaída: arquivos + comandos para executar + hash",
+      "done": true,
+      "done_commit": "1732656",
+      "done_subject": "merge: T-015 Playwright E2E + CI harden",
+      "done_date": "2026-01-26"
     },
     {
       "id": "T-016",
       "title": "Release checklist + docs + versioning (v0.1.0)",
-      "module": "repo"
+      "module": "repo",
+      "done": true,
+      "done_commit": "d7a85a0",
+      "done_subject": "feat(T-016): release docs, changelog, checklist",
+      "done_date": "2026-01-26"
     },
     {
       "id": "T-018",
       "title": "Repo governance: CODEOWNERS + PR/issue templates + rulesets doc",
-      "module": "infra"
+      "module": "infra",
+      "done": false
     },
     {
       "id": "T-019",
       "title": "GitHub templates: issue forms + PR template",
-      "module": "repo"
+      "module": "repo",
+      "done": true,
+      "done_commit": "a54b504",
+      "done_subject": "merge: T-019 templates",
+      "done_date": "2026-01-26"
     },
     {
       "id": "T-020",
       "title": "Repo governance: CODEOWNERS + branch protection checklist",
-      "module": "infra"
+      "module": "infra",
+      "done": true,
+      "done_commit": "cbd066e",
+      "done_subject": "feat(T-020): add CODEOWNERS + branch-protection checklist",
+      "done_date": "2026-01-26"
     },
     {
       "id": "T-021",
       "title": "Baseline Security Headers (backend + frontend)",
-      "module": "infra"
+      "module": "infra",
+      "done": true,
+      "done_commit": "d3c0f3e",
+      "done_subject": "feat(T-021): baseline security headers",
+      "done_date": "2026-01-28"
     },
     {
       "id": "T-022",
       "title": "CSP report-only + report endpoint",
-      "module": "infra"
-    }
-    ,
+      "module": "infra",
+      "done": true,
+      "done_commit": "dab2396",
+      "done_subject": "feat(T-022): csp report-only and report endpoint",
+      "done_date": "2026-01-28"
+    },
     {
       "id": "T-023",
       "title": "CSP report endpoint hardening",
-      "module": "infra"
+      "module": "infra",
+      "done": true,
+      "done_commit": "1409f86",
+      "done_subject": "feat(T-023): harden csp report endpoint",
+      "done_date": "2026-01-28"
     },
     {
       "id": "T-024",
       "title": "CSP reporting compatibility + reporting API content-types",
-      "module": "infra"
-    }
-    ,
+      "module": "infra",
+      "done": true,
+      "done_commit": "5a8ed61",
+      "done_subject": "feat(T-024): csp reporting api compatibility",
+      "done_date": "2026-01-28"
+    },
     {
       "id": "T-025",
       "title": "Stabilize Playwright E2E header assertions (CSP Report-Only) across local/CI",
-      "module": "tests"
-    }
-    ,
+      "module": "tests",
+      "done": true,
+      "done_commit": "6db02ba",
+      "done_subject": "test(T-025): stabilize csp report-only header assertions",
+      "done_date": "2026-01-29"
+    },
     {
       "id": "T-026",
       "title": "Docker compose healthchecks + CI wait for /en/",
-      "module": "infra"
-    }
-    ,
+      "module": "infra",
+      "done": true,
+      "done_commit": "ac13564",
+      "done_subject": "fix(T-026): stabilize compose gate and add inspect helper",
+      "done_date": "2026-01-31"
+    },
     {
       "id": "T-027",
       "title": "CI compose smoke gate",
-      "module": "infra"
-    }
-    ,
+      "module": "infra",
+      "done": true,
+      "done_commit": "ae556a9",
+      "done_subject": "feat(T-027): add CI compose smoke gate",
+      "done_date": "2026-01-27"
+    },
     {
       "id": "T-028",
       "title": "Deployment baseline (dev/prod env docs + minimal hosting plan)",
@@ -455,9 +539,12 @@
         "Commit a simple infrastructure manifest (e.g., docker-compose override or cloud template) that can stand up the backend/frontend in a dev-like environment.",
         "Outline rollback steps and automated health checks to verify the deployment succeeds."
       ],
-      "executor_prompt": "Você está no repo AnnaFinder. Escopo: consolidar T-028 adicionando docs/env specs e um plano mínimo para deploy de dev/prod sem disparar novos serviços. Regras: não crie novos branches, mantenha arquivos existentes apenas em docs ou infra, e registre um commit único naz \"docs(T-028): deployment baseline\"."
-    }
-    ,
+      "executor_prompt": "Você está no repo AnnaFinder. Escopo: consolidar T-028 adicionando docs/env specs e um plano mínimo para deploy de dev/prod sem disparar novos serviços. Regras: não crie novos branches, mantenha arquivos existentes apenas em docs ou infra, e registre um commit único naz \"docs(T-028): deployment baseline\".",
+      "done": true,
+      "done_commit": "762e637",
+      "done_subject": "docs(T-028): deployment baseline",
+      "done_date": "2026-01-28"
+    },
     {
       "id": "T-029",
       "title": "Observability baseline (request-id logs + error reporting skeleton)",
@@ -471,9 +558,12 @@
         "Wire a stub error-reporting endpoint that safely captures exceptions and prints a traceable payload.",
         "Update README or docs with instructions to read logs by request-id and trigger the new error report."
       ],
-      "executor_prompt": "Você está no repo AnnaFinder. Escopo: entregar observability mínimo cobrindo request-id logging e um ponto de coleta de erros sem instrumentar provedores externos. Regras: não altere frontend assets, mantenha mudanças no backend e docs, e use commit \"docs(T-029): observability baseline\"."
-    }
-    ,
+      "executor_prompt": "Você está no repo AnnaFinder. Escopo: entregar observability mínimo cobrindo request-id logging e um ponto de coleta de erros sem instrumentar provedores externos. Regras: não altere frontend assets, mantenha mudanças no backend e docs, e use commit \"docs(T-029): observability baseline\".",
+      "done": true,
+      "done_commit": "f9b02a9",
+      "done_subject": "docs(T-029): observability baseline",
+      "done_date": "2026-01-28"
+    },
     {
       "id": "T-030",
       "title": "API contract polish (OpenAPI tags, healthz schema, docs update)",
@@ -487,7 +577,11 @@
         "Update docs/README to highlight the contract changes and how to inspect the generated OpenAPI spec.",
         "Include a simple script or command to regenerate the OpenAPI file after schema changes."
       ],
-      "executor_prompt": "Você está no repo AnnaFinder. Escopo: polir o contrato da API com tags, schemas e docs sem alterar autenticação. Regras: mantenha foco na OpenAPI e healthz; não mexa em migration ou frontend; use commit \"docs(T-030): api contract polish\"."
+      "executor_prompt": "Você está no repo AnnaFinder. Escopo: polir o contrato da API com tags, schemas e docs sem alterar autenticação. Regras: mantenha foco na OpenAPI e healthz; não mexa em migration ou frontend; use commit \"docs(T-030): api contract polish\".",
+      "done": true,
+      "done_commit": "10fccd0",
+      "done_subject": "docs(T-030): api contract polish",
+      "done_date": "2026-01-28"
     }
   ],
   "milestones": [

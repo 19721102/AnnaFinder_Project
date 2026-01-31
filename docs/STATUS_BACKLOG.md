@@ -1,0 +1,28 @@
+# Status backlog
+
+- DONE: T-004 ? f8bf8ef ? feat(T-004): api v1 scaffolding and error model
+- DONE: T-005 ? fbfbf1a ? feat(T-005): auth jwt with tests
+- DONE: T-006 ? 3bf9fbb ? feat(T-006): multi-tenant authorization gate
+- DONE: T-007 ? 4b90b72 ? feat(T-007): locations crud with tenant isolation
+- DONE: T-008 ? e885114 ? feat(T-008): items crud with filters
+- DONE: T-009 ? a06ca84 ? feat(T-009): tags and item-tag links
+- DONE: T-010 ? c508b28 ? feat(T-010): events timeline with filters
+- DONE: T-011 ? 496b50c ? feat(T-011): audit log with family-scoped listing
+- DONE: T-012 ? b8005ef ? feat(T-012): frontend i18n with language switcher
+- DONE: T-013 ? c9e012e ? feat(T-013): families bootstrap create/list/detail
+- DONE: T-014 ? 8d99252 ? merge: T-014 minimal CI gates
+- DONE: T-015 ? 1732656 ? merge: T-015 Playwright E2E + CI harden
+- DONE: T-016 ? d7a85a0 ? feat(T-016): release docs, changelog, checklist
+- TODO: T-018 ? Repo governance: CODEOWNERS + PR/issue templates + rulesets doc
+- DONE: T-019 ? a54b504 ? merge: T-019 templates
+- DONE: T-020 ? cbd066e ? feat(T-020): add CODEOWNERS + branch-protection checklist
+- DONE: T-021 ? d3c0f3e ? feat(T-021): baseline security headers
+- DONE: T-022 ? dab2396 ? feat(T-022): csp report-only and report endpoint
+- DONE: T-023 ? 1409f86 ? feat(T-023): harden csp report endpoint
+- DONE: T-024 ? 5a8ed61 ? feat(T-024): csp reporting api compatibility
+- DONE: T-025 ? 6db02ba ? test(T-025): stabilize csp report-only header assertions
+- DONE: T-026 ? ac13564 ? fix(T-026): stabilize compose gate and add inspect helper
+- DONE: T-027 ? ae556a9 ? feat(T-027): add CI compose smoke gate
+- DONE: T-028 ? 762e637 ? docs(T-028): deployment baseline
+- DONE: T-029 ? f9b02a9 ? docs(T-029): observability baseline
+- DONE: T-030 ? 10fccd0 ? docs(T-030): api contract polish

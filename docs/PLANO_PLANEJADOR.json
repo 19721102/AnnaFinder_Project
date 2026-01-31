@@ -443,7 +443,12 @@
       "id": "T-018",
       "title": "Repo governance: CODEOWNERS + PR/issue templates + rulesets doc",
       "module": "infra",
-      "done": false
+      "done": false,
+      "allowed_paths": [
+        ".github/**",
+        "docs/**"
+      ],
+      "commit_message": "docs(T-018): repo governance templates"
     },
     {
       "id": "T-019",

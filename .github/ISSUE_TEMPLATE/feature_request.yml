@@ -1,38 +1,36 @@
-name: Feature Request
-description: Suggest an improvement
-title: "[Feature]: "
-labels:
-  - enhancement
-  - triage
+name: Feature request
+description: Sugerir uma nova funcionalidade
+title: "[Feature] "
+labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
-      value: "Tell us what you want to improve and why."
+      value: "Obrigado pela sugestao. Explique o problema e o valor da solucao."
   - type: textarea
     id: problem
     attributes:
-      label: Problem / Motivation
-      description: What problem are you trying to solve?
+      label: Problema ou oportunidade
+      description: Qual problema voce quer resolver?
     validations:
       required: true
   - type: textarea
     id: proposal
     attributes:
-      label: Proposed solution
-      description: What should we build?
+      label: Proposta
+      description: O que voce gostaria de ver?
     validations:
       required: true
   - type: textarea
     id: alternatives
     attributes:
-      label: Alternatives considered
-      description: Any other approaches?
+      label: Alternativas consideradas
+      description: Outras abordagens ou workarounds
     validations:
       required: false
   - type: textarea
-    id: context
+    id: impact
     attributes:
-      label: Additional context
-      description: Links, screenshots, related issues.
+      label: Impacto
+      description: Quem se beneficia e como?
     validations:
       required: false

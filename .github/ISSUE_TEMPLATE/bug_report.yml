@@ -1,42 +1,43 @@
-name: Bug Report
-description: Report a reproducible bug
-title: "[Bug]: "
-labels:
-  - bug
-  - triage
+name: Bug report
+description: Reportar um bug para ajudar a corrigir o produto
+title: "[Bug] "
+labels: ["bug"]
 body:
   - type: markdown
     attributes:
-      value: "Thanks for taking the time to report a bug."
-  - type: textarea
-    id: what_happened
+      value: "Obrigado por reportar. Preencha os campos abaixo com o maximo de detalhes."
+  - type: input
+    id: environment
     attributes:
-      label: What happened?
-      description: What did you see, and what did you expect?
-      placeholder: "Describe the bug clearly."
+      label: Ambiente
+      description: OS, navegador/app, versao, etc.
+      placeholder: "Windows 11, Chrome 122, v1.2.3"
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: Steps to reproduce
-      description: Provide exact steps.
-      placeholder: "1) ... 2) ... 3) ..."
+      label: Passos para reproduzir
+      description: Passo a passo claro para reproduzir o bug
+      placeholder: "1. ...\n2. ...\n3. ..."
     validations:
       required: true
-  - type: input
-    id: version
+  - type: textarea
+    id: expected
     attributes:
-      label: Version / Commit
-      description: App version or git SHA
-      placeholder: "e.g., 104be27 or v0.1.0"
+      label: Comportamento esperado
     validations:
-      required: false
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamento atual
+    validations:
+      required: true
   - type: textarea
     id: logs
     attributes:
-      label: Logs / Screenshots
-      description: Paste logs or screenshots (remove secrets).
-      render: shell
+      label: Logs/prints
+      description: Cole logs relevantes ou anexe imagens
     validations:
       required: false

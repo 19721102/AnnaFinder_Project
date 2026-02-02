@@ -13,7 +13,7 @@
 - DONE: T-014 ? 8d99252 ? merge: T-014 minimal CI gates
 - DONE: T-015 ? 1732656 ? merge: T-015 Playwright E2E + CI harden
 - DONE: T-016 ? d7a85a0 ? feat(T-016): release docs, changelog, checklist
-- TODO: T-018 ? Repo governance: CODEOWNERS + PR/issue templates + rulesets doc
+- DONE: T-018 ? TBD ? docs(T-018): repo governance templates
 - DONE: T-019 ? a54b504 ? merge: T-019 templates
 - DONE: T-020 ? cbd066e ? feat(T-020): add CODEOWNERS + branch-protection checklist
 - DONE: T-021 ? d3c0f3e ? feat(T-021): baseline security headers

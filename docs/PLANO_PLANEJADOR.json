@@ -449,7 +449,7 @@
         "docs/**"
       ],
       "commit_message": "docs(T-018): repo governance templates",
-      "done_commit": "TBD",
+      "done_commit": "8a927a19a9abb4bb3b9eb8cc2a4166e09d8e496d",
       "done_subject": "docs(T-018): repo governance templates",
       "done_date": "2026-02-02"
     },

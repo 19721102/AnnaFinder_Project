@@ -22,7 +22,7 @@
     "eslint": "^8.49.0",
     "eslint-config-next": "14.2.5",
     "jsdom": "^23.0.0",
-    "cross-env": "^7.0.3",
+    "cross-env": "^10.1.0",
     "vitest": "^3.0.0"
   }
 }
